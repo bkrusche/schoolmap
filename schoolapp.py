@@ -256,10 +256,15 @@ with left:
     click = get_click_latlon(map_state)
     if click and len(df_map) > 0:
         click_lat, click_lon = click
-        new_id = nearest_school_id(df_map, click_lat, click_lon, max_m=80)  # tolerance in meters
+        new_id = nearest_school_id(df_map, click_lat, click_lon, max_m=80)
         if new_id and new_id != st.session_state.selected_id:
             st.session_state.selected_id = new_id
-            st.rerun()
+            # Clear the map state to prevent re-triggering
+            if 'last_rerun_id' not in st.session_state:
+                st.session_state.last_rerun_id = None
+            if st.session_state.last_rerun_id != new_id:
+                st.session_state.last_rerun_id = new_id
+                st.rerun()
 
     st.subheader("School list (manual select)")
     options = dff["id"].tolist()
@@ -317,7 +322,21 @@ with right:
         # Any extra fields beyond the known schema (future-proof for PDF-derived enrichments)
         known = set(TEXT_COLS + NUM_COLS + ["label", "reviews", "sources"])
         extras = {k: v for k, v in r.items() if k not in known}
-        extras = {k: v for k, v in extras.items() if v not in (None, "", pd.NA) and not (isinstance(v, float) and pd.isna(v))}
+        def is_empty(v):
+            if v is None or v is pd.NA:
+                return True
+            if isinstance(v, str) and not v.strip():
+                return True
+            if isinstance(v, float):
+                try:
+                    return pd.isna(v)
+                except:
+                    return False
+            return False
+        
+        extras = {k: v for k, v in extras.items() if not is_empty(v)}
+
+        
         if extras:
             with st.expander("More details"):
                 for k, v in extras.items():

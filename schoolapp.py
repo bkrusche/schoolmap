@@ -169,6 +169,11 @@ with col2:
         st.markdown(f'<div class="school-header">{school.get("name", "Unknown School")}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="school-type">{school.get("type", "N/A")}</div>', unsafe_allow_html=True)
         
+        # Notes at the top as summary
+        if school.get("notes"):
+            st.markdown('<div class="info-value" style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; line-height: 1.5;">{}</div>'.format(school["notes"]), unsafe_allow_html=True)
+            st.markdown("---")
+        
         # Address & Municipality
         st.markdown('<div class="info-label">📍 Location</div>', unsafe_allow_html=True)
         address = school.get("address", "N/A")
@@ -246,11 +251,6 @@ with col2:
             with st.expander("✨ Special Features"):
                 for feature in school["special_features"]:
                     st.markdown(f"• {feature}")
-        
-        # Notes
-        if school.get("notes"):
-            st.markdown('<div class="info-label">📝 Notes</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="info-value" style="font-size: 0.9em; font-style: italic;">{school["notes"]}</div>', unsafe_allow_html=True)
         
         # Sources
         if school.get("sources"):

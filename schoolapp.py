@@ -56,13 +56,35 @@ def create_map():
     center_lat = sum(lats) / len(lats)
     center_lon = sum(lons) / len(lons)
     
-    # Create map with OpenStreetMap tiles
+    # Create map with OpenStreetMap Transport tiles (shows public transit)
+    m = folium.Map(
+        location=[center_lat, center_lon],
+        zoom_start=11,
+        tiles="https://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=your-api-key",
+        attr='&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        control_scale=True
+    )
+    
+    # Alternative: Use OpenStreetMap with transport overlay (no API key needed)
     m = folium.Map(
         location=[center_lat, center_lon],
         zoom_start=11,
         tiles="OpenStreetMap",
         control_scale=True
     )
+    
+    # Add OpenPTMap overlay for public transport
+    folium.TileLayer(
+        tiles="https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png",
+        attr='Map <a href="https://memomaps.de/">memomaps.de</a> <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        name="Public Transport",
+        overlay=True,
+        control=True,
+        opacity=0.7
+    ).add_to(m)
+    
+    # Add layer control to toggle transport overlay
+    folium.LayerControl().add_to(m)
     
     # Add markers for each school
     for idx, school in enumerate(SCHOOLS):

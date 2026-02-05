@@ -1,356 +1,186 @@
-import math
 import streamlit as st
-import pandas as pd
 import folium
 from streamlit_folium import st_folium
-
 from schools_data import SCHOOLS
 
-st.set_page_config(page_title="Valencia school map (screen-light)", layout="wide")
-
-
-# -----------------------------
-# Robust schema handling
-# -----------------------------
-TEXT_COLS = [
-    "id", "name", "type", "address", "municipality", "stages", "curriculum",
-    "languages_day_to_day", "device_policy_summary", "pedagogy",
-    "coords_confidence", "notes"
-]
-NUM_COLS = ["lat", "lon"]
-
-def to_df(schools):
-    df = pd.DataFrame(schools).copy()
-
-    # Ensure minimal required fields
-    if "id" not in df.columns:
-        df["id"] = df.index.astype(str)
-    if "name" not in df.columns:
-        df["name"] = "Unnamed school"
-
-    # Ensure text cols exist and are strings
-    for c in TEXT_COLS:
-        if c not in df.columns:
-            df[c] = ""
-        df[c] = df[c].astype("string").fillna("")
-
-    # Ensure numeric cols exist and are numeric (NaN allowed)
-    for c in NUM_COLS:
-        if c not in df.columns:
-            df[c] = pd.NA
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-
-    # Optional object fields
-    if "sources" not in df.columns:
-        df["sources"] = pd.NA
-    if "reviews" not in df.columns:
-        df["reviews"] = pd.NA
-
-    # Display label
-    df["label"] = df.apply(
-        lambda r: f"{r['name']} — {r['type']}" + (f" ({r['municipality']})" if r["municipality"] else ""),
-        axis=1
-    )
-    return df
-
-
-def render_sources(sources):
-    """sources expected: list[dict(label, ref)] but tolerate other shapes."""
-    if sources is None or sources is pd.NA or (isinstance(sources, float) and pd.isna(sources)):
-        st.write("—")
-        return
-
-    if isinstance(sources, list):
-        if len(sources) == 0:
-            st.write("—")
-            return
-        if isinstance(sources[0], dict):
-            for s in sources:
-                label = s.get("label", "Source")
-                ref = s.get("ref", "")
-                if ref:
-                    st.markdown(f"- [{label}]({ref})")
-        else:
-            for ref in sources:
-                if ref:
-                    st.markdown(f"- {ref}")
-        return
-
-    if isinstance(sources, str) and sources.strip():
-        st.markdown(f"- {sources.strip()}")
-    else:
-        st.write("—")
-
-
-def _haversine_m(lat1, lon1, lat2, lon2):
-    """Distance in meters."""
-    R = 6371000.0
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dl = math.radians(lon2 - lon1)
-    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dl/2)**2
-    return 2 * R * math.asin(math.sqrt(a))
-
-
-def nearest_school_id(df_map, click_lat, click_lon, max_m=50):
-    """Map click lat/lon to the nearest school within max_m meters."""
-    best_id = None
-    best_d = None
-    for _, r in df_map.iterrows():
-        lat, lon = float(r["lat"]), float(r["lon"])
-        d = _haversine_m(click_lat, click_lon, lat, lon)
-        if best_d is None or d < best_d:
-            best_d = d
-            best_id = r["id"]
-    if best_d is not None and best_d <= max_m:
-        return best_id
-    return None
-
-
-# -----------------------------
-# Load data + filters
-# -----------------------------
-df = to_df(SCHOOLS)
-
-st.title("Valencia-area schools map (screen-light / low-device focus)")
-st.caption("Click a pin to select a school.")
-
-with st.sidebar:
-    st.header("Filters")
-
-    types = sorted([t for t in df["type"].unique().tolist() if t])
-    type_sel = st.multiselect("School type", types, default=types)
-    dff = df[df["type"].isin(type_sel)].copy()
-
-    munis = sorted([m for m in dff["municipality"].unique().tolist() if m])
-    if munis:
-        muni_sel = st.multiselect("Municipality", munis, default=munis)
-        dff = dff[dff["municipality"].isin(muni_sel)].copy()
-
-    q = st.text_input("Search (name/address)", "")
-    if q.strip():
-        qq = q.strip().lower()
-        dff = dff[
-            dff["name"].str.lower().str.contains(qq, na=False)
-            | dff["address"].str.lower().str.contains(qq, na=False)
-        ].copy()
-
-if dff.empty:
-    st.warning("No schools match the current filters.")
-    st.stop()
-
-# Initialize session state
-if "selected_id" not in st.session_state:
-    st.session_state.selected_id = ""
-if "last_clicked" not in st.session_state:
-    st.session_state.last_clicked = None
-if "filter_hash" not in st.session_state:
-    st.session_state.filter_hash = None
-
-# Check if filters changed - if so, clear click tracking
-current_filter_hash = hash(tuple(sorted(dff["id"].tolist())))
-if st.session_state.filter_hash != current_filter_hash:
-    st.session_state.filter_hash = current_filter_hash
-    st.session_state.last_clicked = None
-
-if st.session_state.selected_id not in dff["id"].tolist():
-    st.session_state.selected_id = dff.iloc[0]["id"]
-
-
-# Missing coords warning
-missing = dff[dff["lat"].isna() | dff["lon"].isna()][["name", "address"]]
-if len(missing) > 0:
-    st.sidebar.warning(f"{len(missing)} record(s) missing coordinates → they won't appear as pins.")
-    with st.sidebar.expander("Show missing"):
-        for _, r in missing.iterrows():
-            st.write(f"- {r['name']}: {r['address']}")
-
-
-# -----------------------------
-# Map with OpenStreetMap
-# -----------------------------
-df_map = dff.dropna(subset=["lat", "lon"]).copy()
-
-# Center map on selected (if it has coords); else on mean; else Valencia center
-selected_row = df[df["id"] == st.session_state.selected_id]
-if not selected_row.empty and pd.notna(selected_row.iloc[0]["lat"]) and pd.notna(selected_row.iloc[0]["lon"]):
-    center_lat = float(selected_row.iloc[0]["lat"])
-    center_lon = float(selected_row.iloc[0]["lon"])
-    zoom = 13
-elif len(df_map) > 0:
-    center_lat = float(df_map["lat"].mean())
-    center_lon = float(df_map["lon"].mean())
-    zoom = 11
-else:
-    center_lat, center_lon, zoom = 39.4699, -0.3763, 11
-
-m = folium.Map(
-    location=[center_lat, center_lon], 
-    zoom_start=zoom, 
-    control_scale=True,
-    tiles='OpenStreetMap'
+# Page config
+st.set_page_config(
+    page_title="Valencia Schools Explorer",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-def marker_color(s_type: str, s_name: str) -> str:
-    t = (s_type or "").lower()
-    n = (s_name or "").lower()
-    if "public" in t:
-        return "blue"
-    if "montessori" in n or "waldorf" in n:
-        return "green"
-    return "purple"
+# Custom CSS for cleaner look
+st.markdown("""
+    <style>
+    .main > div {
+        padding-top: 2rem;
+    }
+    h1 {
+        color: #1f77b4;
+        font-weight: 600;
+    }
+    .school-header {
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .school-type {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    .info-label {
+        color: #34495e;
+        font-weight: 600;
+        margin-top: 0.8rem;
+    }
+    .info-value {
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Add markers with school IDs
-for _, r in df_map.iterrows():
-    lat, lon = float(r["lat"]), float(r["lon"])
-    is_selected = (r["id"] == st.session_state.selected_id)
+# Initialize session state
+if "selected_school" not in st.session_state:
+    st.session_state.selected_school = None
+
+# Create the map
+def create_map():
+    # Calculate center of all schools
+    lats = [s["lat"] for s in SCHOOLS]
+    lons = [s["lon"] for s in SCHOOLS]
+    center_lat = sum(lats) / len(lats)
+    center_lon = sum(lons) / len(lons)
     
-    if is_selected:
-        color = "red"
-        icon_name = "star"
-        name_prefix = "⭐ "
-    else:
-        color = marker_color(r["type"], r["name"])
-        icon_name = "info-sign"
-        name_prefix = ""
-    
-    popup_html = f"""
-    <div style="font-family: Arial; width: 340px;">
-      <div style="font-size:14px; font-weight:700;">{name_prefix}{r['name']}</div>
-      <div style="font-size:12px; margin-top:4px;"><b>Type:</b> {r['type']}</div>
-      <div style="font-size:12px; margin-top:4px;"><b>Address:</b> {r['address']}</div>
-      <div style="font-size:12px; margin-top:6px;"><b>Device:</b> {r['device_policy_summary']}</div>
-    </div>
-    """
-    
-    folium.Marker(
-        location=[lat, lon],
-        tooltip=r["name"],
-        popup=folium.Popup(popup_html, max_width=480),
-        icon=folium.Icon(color=color, icon=icon_name),
-    ).add_to(m)
-
-
-# -----------------------------
-# Layout
-# -----------------------------
-left, right = st.columns([2, 1], gap="large")
-
-with left:
-    st.subheader("Map (click a pin to select)")
-    
-    # Use a stable key - dynamic keys cause issues
-    map_state = st_folium(m, width=950, height=650, key="school_map")
-
-    # Detect clicks - only process if coordinates actually changed
-    if map_state and "last_object_clicked" in map_state:
-        clicked = map_state["last_object_clicked"]
-        if clicked and isinstance(clicked, dict) and len(df_map) > 0:
-            click_lat = clicked.get("lat")
-            click_lon = clicked.get("lng", clicked.get("lon"))
-            
-            if click_lat is not None and click_lon is not None:
-                # Create a precise signature for this click
-                click_signature = f"{float(click_lat):.7f},{float(click_lon):.7f}"
-                
-                # Only process if this is genuinely a NEW click
-                if st.session_state.last_clicked != click_signature:
-                    new_id = nearest_school_id(df_map, float(click_lat), float(click_lon), max_m=80)
-                    
-                    if new_id:
-                        # Update tracking FIRST, before any state changes
-                        st.session_state.last_clicked = click_signature
-                        
-                        # Only rerun if we're actually changing selection
-                        if new_id != st.session_state.selected_id:
-                            st.session_state.selected_id = new_id
-                            st.rerun()
-
-    st.subheader("School list (manual select)")
-    options = dff["id"].tolist()
-    labels = dict(zip(dff["id"], dff["label"]))
-    idx = options.index(st.session_state.selected_id) if st.session_state.selected_id in options else 0
-    chosen = st.radio(
-        label="",
-        options=options,
-        index=idx,
-        format_func=lambda oid: labels.get(oid, oid),
-        label_visibility="collapsed",
-        key="school_list_radio",
+    # Create map with OpenStreetMap tiles
+    m = folium.Map(
+        location=[center_lat, center_lon],
+        zoom_start=11,
+        tiles="OpenStreetMap",
+        control_scale=True
     )
-    if chosen != st.session_state.selected_id:
-        st.session_state.selected_id = chosen
-        st.session_state.last_clicked = None  # Reset click tracking
-        st.rerun()
-
-
-# Helper function to check if value is empty (fixes TypeError)
-def is_empty(v):
-    if v is None or v is pd.NA:
-        return True
-    if isinstance(v, str) and not v.strip():
-        return True
-    if isinstance(v, float):
-        try:
-            return pd.isna(v)
-        except:
-            return False
-    return False
-
-
-with right:
-    st.subheader("Selected school — full portrait")
-    row = df[df["id"] == st.session_state.selected_id]
-    if row.empty:
-        st.info("Select a school.")
-    else:
-        r = row.iloc[0].to_dict()
-
-        # Header
-        st.markdown(f"### {r.get('name','')}")
-        st.write(f"**Type:** {r.get('type','')}")
-        st.write(f"**Address:** {r.get('address','')}")
-        if r.get("municipality"):
-            st.write(f"**Municipality:** {r.get('municipality','')}")
-
-        # Core sections
-        def show(label, key):
-            v = r.get(key)
-            if is_empty(v):
-                return
-            s = str(v).strip()
-            if not s:
-                return
-            st.write(f"**{label}:** {s}")
-
-        show("Stages", "stages")
-        show("Curriculum", "curriculum")
-        show("Languages (day-to-day)", "languages_day_to_day")
-        show("Device policy (summary)", "device_policy_summary")
-        show("Pedagogy", "pedagogy")
-        show("Coordinate confidence", "coords_confidence")
-
-        # Any extra fields beyond the known schema
-        known = set(TEXT_COLS + NUM_COLS + ["label", "reviews", "sources"])
-        extras = {k: v for k, v in r.items() if k not in known and not is_empty(v)}
+    
+    # Add markers for each school
+    for idx, school in enumerate(SCHOOLS):
+        # Color code: blue for public, red for private
+        color = "blue" if school["type"].lower() == "public" else "lightred"
+        icon = "graduation-cap"
         
-        if extras:
-            with st.expander("More details"):
-                for k, v in extras.items():
-                    st.write(f"**{k}:** {v}")
+        # Create popup content
+        popup_html = f"""
+        <div style="font-family: Arial; min-width: 200px; max-width: 300px;">
+            <b style="font-size: 14px; color: #2c3e50;">{school['name']}</b><br>
+            <span style="font-size: 12px; color: #7f8c8d;">{school['type']} School</span><br>
+            <span style="font-size: 11px; color: #95a5a6; margin-top: 4px; display: block;">
+                Click for details
+            </span>
+        </div>
+        """
+        
+        folium.Marker(
+            location=[school["lat"], school["lon"]],
+            popup=folium.Popup(popup_html, max_width=300),
+            tooltip=school["name"],
+            icon=folium.Icon(color=color, icon=icon, prefix='fa')
+        ).add_to(m)
+    
+    return m
 
-        # Reviews
-        if not is_empty(r.get("reviews")):
-            with st.expander("Reviews snapshot"):
-                st.write(r["reviews"])
+# Main layout
+col1, col2 = st.columns([2, 1], gap="large")
 
+with col1:
+    st.title("🎓 Valencia Schools Explorer")
+    st.markdown("**Click any pin on the map to see school details**")
+    st.caption("🔵 Public Schools  |  🔴 Private Schools")
+    
+    # Render map
+    m = create_map()
+    map_data = st_folium(
+        m,
+        width=None,
+        height=600,
+        returned_objects=["last_object_clicked"]
+    )
+    
+    # Detect which school was clicked
+    if map_data and map_data.get("last_object_clicked"):
+        clicked_lat = map_data["last_object_clicked"].get("lat")
+        clicked_lng = map_data["last_object_clicked"].get("lng")
+        
+        if clicked_lat and clicked_lng:
+            # Find the school at these coordinates (with small tolerance)
+            for school in SCHOOLS:
+                if abs(school["lat"] - clicked_lat) < 0.001 and abs(school["lon"] - clicked_lng) < 0.001:
+                    st.session_state.selected_school = school
+                    break
+
+with col2:
+    st.markdown("### 📋 School Information")
+    
+    if st.session_state.selected_school:
+        school = st.session_state.selected_school
+        
+        # School header
+        st.markdown(f'<div class="school-header">{school["name"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="school-type">{school["type"]} School</div>', unsafe_allow_html=True)
+        
+        # Address
+        st.markdown('<div class="info-label">📍 Address</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="info-value">{school["address"]}</div>', unsafe_allow_html=True)
+        
+        # Ages
+        if "ages" in school and school["ages"]:
+            st.markdown('<div class="info-label">👶 Ages</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{school["ages"]}</div>', unsafe_allow_html=True)
+        
+        # Curriculum
+        if "curriculum" in school and school["curriculum"]:
+            st.markdown('<div class="info-label">📚 Curriculum</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{school["curriculum"]}</div>', unsafe_allow_html=True)
+        
+        # Languages
+        if "languages" in school and school["languages"]:
+            st.markdown('<div class="info-label">🌐 Languages</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{school["languages"]}</div>', unsafe_allow_html=True)
+        
+        # Screen Policy
+        if "screen_policy" in school and school["screen_policy"]:
+            st.markdown('<div class="info-label">💻 Screen Policy</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{school["screen_policy"]}</div>', unsafe_allow_html=True)
+        
         # Notes
-        if str(r.get("notes", "")).strip():
-            st.caption(r["notes"])
-
+        if "notes" in school and school["notes"]:
+            st.markdown('<div class="info-label">📝 Notes</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{school["notes"]}</div>', unsafe_allow_html=True)
+        
         # Sources
-        st.markdown("**Sources:**")
-        render_sources(r.get("sources"))
-
-st.divider()
-st.caption("Pin-click selection works by mapping your click to the nearest school within ~80m. If two schools share nearly identical coords, increase precision in schools_data.py.")
+        if "sources" in school and school["sources"]:
+            st.markdown('<div class="info-label">🔗 Sources</div>', unsafe_allow_html=True)
+            for source in school["sources"]:
+                st.markdown(f"- [{source}]({source})", unsafe_allow_html=True)
+        
+        st.divider()
+        
+        # Google Maps link
+        gmaps_url = f"https://www.google.com/maps/search/?api=1&query={school['lat']},{school['lon']}"
+        st.markdown(f"[🗺️ Open in Google Maps]({gmaps_url})")
+        
+    else:
+        st.info("👆 Click a school pin on the map to view details")
+        
+        # Show school count
+        st.divider()
+        st.metric("Total Schools", len(SCHOOLS))
+        
+        public_count = sum(1 for s in SCHOOLS if s["type"].lower() == "public")
+        private_count = len(SCHOOLS) - public_count
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.metric("Public", public_count)
+        with col_b:
+            st.metric("Private", private_count)

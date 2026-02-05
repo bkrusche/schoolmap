@@ -47,7 +47,7 @@ st.markdown("""
 @st.cache_data
 def load_schools():
     """Load schools from CSV file and convert to list of dictionaries"""
-    df = pd.read_csv('schools_data.csv')
+    df = pd.read_csv('school_data.csv')
     # Convert NaN to None for cleaner handling
     df = df.where(pd.notnull(df), None)
     return df.to_dict('records')

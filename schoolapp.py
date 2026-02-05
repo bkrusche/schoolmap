@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
-from schools_data import SCHOOLS
 
 # Page config
 st.set_page_config(
@@ -43,6 +42,17 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
+# Load schools data from CSV
+@st.cache_data
+def load_schools():
+    """Load schools from CSV file and convert to list of dictionaries"""
+    df = pd.read_csv('schools_data.csv')
+    # Convert NaN to None for cleaner handling
+    df = df.where(pd.notnull(df), None)
+    return df.to_dict('records')
+
+SCHOOLS = load_schools()
 
 # Initialize session state
 if "selected_school" not in st.session_state:
@@ -127,15 +137,13 @@ with col1:
     # Prepare table data
     table_data = []
     for school in SCHOOLS:
-        # Extract screen policy - handle both old and new field names
-        screen_policy = school.get("device_policy_summary", school.get("screen_policy", "N/A"))
-        if screen_policy and len(screen_policy) > 60:
-            screen_policy = screen_policy[:60] + "..."
+        # Extract screen policy
+        screen_policy = school.get("device_policy_summary", "N/A")
+        if screen_policy and screen_policy != "N/A" and len(str(screen_policy)) > 60:
+            screen_policy = str(screen_policy)[:60] + "..."
         
         # Extract Micole rating
-        micole_rating = None
-        if school.get("reviews") and isinstance(school["reviews"], dict):
-            micole_rating = school["reviews"].get("micole_rating")
+        micole_rating = school.get("micole_rating")
         
         table_data.append({
             "Micole Rating": micole_rating if micole_rating is not None else "—",
@@ -144,14 +152,14 @@ with col1:
             "Municipality": school.get("municipality", "N/A"),
             "Ages": school.get("ages", "N/A"),
             "Curriculum": school.get("curriculum", "N/A"),
-            "Languages": school.get("languages_day_to_day", school.get("languages", "N/A")),
-            "Screen Policy": screen_policy
+            "Languages": school.get("languages_day_to_day", "N/A"),
+            "Screen Policy": screen_policy if screen_policy else "N/A"
         })
     
     df = pd.DataFrame(table_data)
     
     # Sort by Micole Rating (descending), with "—" (no rating) at the bottom
-    df['_sort_key'] = df['Micole Rating'].apply(lambda x: -999 if x == "—" else float(x))
+    df['_sort_key'] = df['Micole Rating'].apply(lambda x: -999 if x == "—" else float(x) if x != "—" else -999)
     df = df.sort_values('_sort_key', ascending=False).drop('_sort_key', axis=1).reset_index(drop=True)
     
     # Display as interactive dataframe
@@ -181,24 +189,32 @@ with col2:
         st.markdown(f'<div class="school-header">{school.get("name", "Unknown School")}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="school-type">{school.get("type", "N/A")}</div>', unsafe_allow_html=True)
         
-        # Notes at the top as summary
-        if school.get("notes"):
-            st.markdown('<div class="info-value" style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; line-height: 1.5;">{}</div>'.format(school["notes"]), unsafe_allow_html=True)
+        # Special notes at the top as summary
+        if school.get("special_notes"):
+            st.markdown('<div class="info-value" style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; line-height: 1.5;">{}</div>'.format(school["special_notes"]), unsafe_allow_html=True)
             st.markdown("---")
         
         # Address & Municipality
         st.markdown('<div class="info-label">📍 Location</div>', unsafe_allow_html=True)
         address = school.get("address", "N/A")
         municipality = school.get("municipality", "")
+        neighborhood = school.get("neighborhood", "")
+        location_parts = [address]
+        if neighborhood:
+            location_parts.append(f"<i>{neighborhood}</i>")
         if municipality:
-            st.markdown(f'<div class="info-value">{address}<br>{municipality}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="info-value">{address}</div>', unsafe_allow_html=True)
+            location_parts.append(f"<b>{municipality}</b>")
+        st.markdown(f'<div class="info-value">{"<br>".join(location_parts)}</div>', unsafe_allow_html=True)
         
         # Founded
         if school.get("founded"):
             st.markdown('<div class="info-label">📅 Founded</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="info-value">{school["founded"]}</div>', unsafe_allow_html=True)
+        
+        # Student Count
+        if school.get("student_count"):
+            st.markdown('<div class="info-label">👥 Students</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{school["student_count"]}</div>', unsafe_allow_html=True)
         
         # Ages & Stages
         if school.get("ages"):
@@ -215,13 +231,18 @@ with col2:
             st.markdown(f'<div class="info-value">{school["curriculum"]}</div>', unsafe_allow_html=True)
         
         # Languages
-        languages_display = school.get("languages_day_to_day", school.get("languages", ""))
+        languages_display = school.get("languages_day_to_day", "")
         if languages_display:
-            st.markdown('<div class="info-label">🌐 Languages</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-label">🌐 Languages (Day-to-Day)</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="info-value">{languages_display}</div>', unsafe_allow_html=True)
         
+        languages_taught = school.get("languages_taught", "")
+        if languages_taught:
+            st.markdown('<div class="info-label">🗣️ Languages Taught</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{languages_taught}</div>', unsafe_allow_html=True)
+        
         # Screen/Device Policy
-        device_policy = school.get("device_policy_summary", school.get("screen_policy", ""))
+        device_policy = school.get("device_policy_summary", "")
         if device_policy:
             st.markdown('<div class="info-label">💻 Device Policy</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="info-value">{device_policy}</div>', unsafe_allow_html=True)
@@ -232,51 +253,19 @@ with col2:
             st.markdown(f'<div class="info-value">{school["pedagogy"]}</div>', unsafe_allow_html=True)
         
         # Fees
-        if school.get("fees"):
+        if school.get("fees_range"):
             st.markdown('<div class="info-label">💰 Fees</div>', unsafe_allow_html=True)
-            fees = school["fees"]
-            if isinstance(fees, dict):
-                if "tuition" in fees:
-                    st.markdown(f'<div class="info-value">{fees["tuition"]}</div>', unsafe_allow_html=True)
-                elif "range" in fees:
-                    st.markdown(f'<div class="info-value">{fees["range"]}</div>', unsafe_allow_html=True)
-                elif "annual_range_2025_26" in fees:
-                    st.markdown(f'<div class="info-value">{fees["annual_range_2025_26"]}</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="info-value">{fees}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{school["fees_range"]}</div>', unsafe_allow_html=True)
         
-        # Reviews (if available)
-        if school.get("reviews"):
-            reviews = school["reviews"]
-            if isinstance(reviews, dict):
-                review_parts = []
-                if reviews.get("google_rating"):
-                    review_parts.append(f"Google: {reviews['google_rating']}⭐")
-                if reviews.get("micole_rating"):
-                    review_parts.append(f"Micole: {reviews['micole_rating']}⭐")
-                if review_parts:
-                    st.markdown('<div class="info-label">⭐ Reviews</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="info-value">{" | ".join(review_parts)}</div>', unsafe_allow_html=True)
-        
-        # Special Features (collapsible)
-        if school.get("special_features"):
-            with st.expander("✨ Special Features"):
-                for feature in school["special_features"]:
-                    st.markdown(f"• {feature}")
-        
-        # Sources
-        if school.get("sources"):
-            st.markdown('<div class="info-label">🔗 Sources</div>', unsafe_allow_html=True)
-            sources = school["sources"]
-            if isinstance(sources, list):
-                for source in sources:
-                    if isinstance(source, dict):
-                        label = source.get("label", "Source")
-                        ref = source.get("ref", "")
-                        if ref:
-                            st.markdown(f"- [{label}]({ref})")
-                    else:
-                        st.markdown(f"- [{source}]({source})")
+        # Reviews
+        review_parts = []
+        if school.get("google_rating"):
+            review_parts.append(f"Google: {school['google_rating']}⭐ ({school.get('google_reviews', '')} reviews)")
+        if school.get("micole_rating"):
+            review_parts.append(f"Micole: {school['micole_rating']}⭐ ({school.get('micole_reviews', '')} reviews)")
+        if review_parts:
+            st.markdown('<div class="info-label">⭐ Reviews</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-value">{" | ".join(review_parts)}</div>', unsafe_allow_html=True)
         
         st.divider()
         
@@ -291,7 +280,7 @@ with col2:
         st.divider()
         st.metric("Total Schools", len(SCHOOLS))
         
-        public_count = sum(1 for s in SCHOOLS if "public" in s.get("type", "").lower())
+        public_count = sum(1 for s in SCHOOLS if s.get("type") and "public" in s.get("type", "").lower())
         private_count = len(SCHOOLS) - public_count
         
         col_a, col_b = st.columns(2)

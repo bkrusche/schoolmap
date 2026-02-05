@@ -107,34 +107,13 @@ def nearest_school_id(df_map, click_lat, click_lon, max_m=50):
     return None
 
 
-def get_click_latlon(map_state: dict):
-    """Try multiple keys streamlit-folium may emit depending on layer/click target."""
-    if not isinstance(map_state, dict):
-        return None
-
-    candidates = [
-        map_state.get("last_object_clicked"),
-        map_state.get("last_object_clicked_popup"),
-        map_state.get("last_object_clicked_tooltip"),
-    ]
-    for c in candidates:
-        if isinstance(c, dict) and "lat" in c and ("lng" in c or "lon" in c):
-            lat = c.get("lat")
-            lon = c.get("lng", c.get("lon"))
-            try:
-                return float(lat), float(lon)
-            except Exception:
-                pass
-    return None
-
-
 # -----------------------------
 # Load data + filters
 # -----------------------------
 df = to_df(SCHOOLS)
 
 st.title("Valencia-area schools map (screen-light / low-device focus)")
-st.caption("Click a pin to select a school. (No MarkerCluster — clicks are reliable on Streamlit Cloud.)")
+st.caption("Click a pin to select a school.")
 
 with st.sidebar:
     st.header("Filters")
@@ -160,8 +139,11 @@ if dff.empty:
     st.warning("No schools match the current filters.")
     st.stop()
 
+# Initialize session state
 if "selected_id" not in st.session_state:
     st.session_state.selected_id = ""
+if "last_clicked" not in st.session_state:
+    st.session_state.last_clicked = None
 
 if st.session_state.selected_id not in dff["id"].tolist():
     st.session_state.selected_id = dff.iloc[0]["id"]
@@ -170,14 +152,14 @@ if st.session_state.selected_id not in dff["id"].tolist():
 # Missing coords warning
 missing = dff[dff["lat"].isna() | dff["lon"].isna()][["name", "address"]]
 if len(missing) > 0:
-    st.sidebar.warning(f"{len(missing)} record(s) missing coordinates → they won’t appear as pins.")
+    st.sidebar.warning(f"{len(missing)} record(s) missing coordinates → they won't appear as pins.")
     with st.sidebar.expander("Show missing"):
         for _, r in missing.iterrows():
             st.write(f"- {r['name']}: {r['address']}")
 
 
 # -----------------------------
-# Map (NO MarkerCluster)
+# Map with OpenStreetMap
 # -----------------------------
 df_map = dff.dropna(subset=["lat", "lon"]).copy()
 
@@ -186,7 +168,7 @@ selected_row = df[df["id"] == st.session_state.selected_id]
 if not selected_row.empty and pd.notna(selected_row.iloc[0]["lat"]) and pd.notna(selected_row.iloc[0]["lon"]):
     center_lat = float(selected_row.iloc[0]["lat"])
     center_lon = float(selected_row.iloc[0]["lon"])
-    zoom = 12
+    zoom = 13
 elif len(df_map) > 0:
     center_lat = float(df_map["lat"].mean())
     center_lon = float(df_map["lon"].mean())
@@ -194,7 +176,12 @@ elif len(df_map) > 0:
 else:
     center_lat, center_lon, zoom = 39.4699, -0.3763, 11
 
-m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, control_scale=True)
+m = folium.Map(
+    location=[center_lat, center_lon], 
+    zoom_start=zoom, 
+    control_scale=True,
+    tiles='OpenStreetMap'
+)
 
 def marker_color(s_type: str, s_name: str) -> str:
     t = (s_type or "").lower()
@@ -205,42 +192,34 @@ def marker_color(s_type: str, s_name: str) -> str:
         return "green"
     return "purple"
 
-# Add markers (selected last + different icon)
-for _, r in df_map[df_map["id"] != st.session_state.selected_id].iterrows():
+# Add markers with school IDs
+for _, r in df_map.iterrows():
     lat, lon = float(r["lat"]), float(r["lon"])
-    color = marker_color(r["type"], r["name"])
+    is_selected = (r["id"] == st.session_state.selected_id)
+    
+    if is_selected:
+        color = "red"
+        icon_name = "star"
+        name_prefix = "⭐ "
+    else:
+        color = marker_color(r["type"], r["name"])
+        icon_name = "info-sign"
+        name_prefix = ""
+    
     popup_html = f"""
     <div style="font-family: Arial; width: 340px;">
-      <div style="font-size:14px; font-weight:700;">{r['name']}</div>
+      <div style="font-size:14px; font-weight:700;">{name_prefix}{r['name']}</div>
       <div style="font-size:12px; margin-top:4px;"><b>Type:</b> {r['type']}</div>
       <div style="font-size:12px; margin-top:4px;"><b>Address:</b> {r['address']}</div>
       <div style="font-size:12px; margin-top:6px;"><b>Device:</b> {r['device_policy_summary']}</div>
-      <div style="font-size:12px; margin-top:6px; opacity:0.75;">Click pin → selects school</div>
     </div>
     """
+    
     folium.Marker(
         location=[lat, lon],
         tooltip=r["name"],
         popup=folium.Popup(popup_html, max_width=480),
-        icon=folium.Icon(color=color, icon="info-sign"),
-    ).add_to(m)
-
-# Selected marker on top
-sel_map = df_map[df_map["id"] == st.session_state.selected_id]
-for _, r in sel_map.iterrows():
-    lat, lon = float(r["lat"]), float(r["lon"])
-    popup_html = f"""
-    <div style="font-family: Arial; width: 340px;">
-      <div style="font-size:14px; font-weight:700;">⭐ {r['name']}</div>
-      <div style="font-size:12px; margin-top:4px;"><b>Type:</b> {r['type']}</div>
-      <div style="font-size:12px; margin-top:4px;"><b>Address:</b> {r['address']}</div>
-    </div>
-    """
-    folium.Marker(
-        location=[lat, lon],
-        tooltip=f"Selected: {r['name']}",
-        popup=folium.Popup(popup_html, max_width=480),
-        icon=folium.Icon(color="red", icon="star"),
+        icon=folium.Icon(color=color, icon=icon_name),
     ).add_to(m)
 
 
@@ -253,18 +232,24 @@ with left:
     st.subheader("Map (click a pin to select)")
     map_state = st_folium(m, width=950, height=650, key="school_map")
 
-    click = get_click_latlon(map_state)
-    if click and len(df_map) > 0:
-        click_lat, click_lon = click
-        new_id = nearest_school_id(df_map, click_lat, click_lon, max_m=80)
-        if new_id and new_id != st.session_state.selected_id:
-            st.session_state.selected_id = new_id
-            # Clear the map state to prevent re-triggering
-            if 'last_rerun_id' not in st.session_state:
-                st.session_state.last_rerun_id = None
-            if st.session_state.last_rerun_id != new_id:
-                st.session_state.last_rerun_id = new_id
-                st.rerun()
+    # Detect clicks - only process NEW clicks
+    if map_state and "last_object_clicked" in map_state:
+        clicked = map_state["last_object_clicked"]
+        if clicked and len(df_map) > 0:
+            # Create a unique identifier for this click
+            click_signature = f"{clicked.get('lat')}_{clicked.get('lng')}"
+            
+            # Only process if this is a NEW click
+            if st.session_state.last_clicked != click_signature:
+                click_lat = clicked.get("lat")
+                click_lon = clicked.get("lng", clicked.get("lon"))
+                
+                if click_lat and click_lon:
+                    new_id = nearest_school_id(df_map, click_lat, click_lon, max_m=80)
+                    if new_id and new_id != st.session_state.selected_id:
+                        st.session_state.selected_id = new_id
+                        st.session_state.last_clicked = click_signature
+                        st.rerun()
 
     st.subheader("School list (manual select)")
     options = dff["id"].tolist()
@@ -280,7 +265,22 @@ with left:
     )
     if chosen != st.session_state.selected_id:
         st.session_state.selected_id = chosen
+        st.session_state.last_clicked = None  # Reset click tracking
         st.rerun()
+
+
+# Helper function to check if value is empty (fixes TypeError)
+def is_empty(v):
+    if v is None or v is pd.NA:
+        return True
+    if isinstance(v, str) and not v.strip():
+        return True
+    if isinstance(v, float):
+        try:
+            return pd.isna(v)
+        except:
+            return False
+    return False
 
 
 with right:
@@ -298,14 +298,10 @@ with right:
         if r.get("municipality"):
             st.write(f"**Municipality:** {r.get('municipality','')}")
 
-        # Core sections (keeps your richer info once you upload the full dataset)
+        # Core sections
         def show(label, key):
             v = r.get(key)
-            if v is None:
-                return
-            if isinstance(v, float) and pd.isna(v):
-                return
-            if v is pd.NA:
+            if is_empty(v):
                 return
             s = str(v).strip()
             if not s:
@@ -319,23 +315,9 @@ with right:
         show("Pedagogy", "pedagogy")
         show("Coordinate confidence", "coords_confidence")
 
-        # Any extra fields beyond the known schema (future-proof for PDF-derived enrichments)
+        # Any extra fields beyond the known schema
         known = set(TEXT_COLS + NUM_COLS + ["label", "reviews", "sources"])
-        extras = {k: v for k, v in r.items() if k not in known}
-        def is_empty(v):
-            if v is None or v is pd.NA:
-                return True
-            if isinstance(v, str) and not v.strip():
-                return True
-            if isinstance(v, float):
-                try:
-                    return pd.isna(v)
-                except:
-                    return False
-            return False
-        
-        extras = {k: v for k, v in extras.items() if not is_empty(v)}
-
+        extras = {k: v for k, v in r.items() if k not in known and not is_empty(v)}
         
         if extras:
             with st.expander("More details"):
@@ -343,7 +325,7 @@ with right:
                     st.write(f"**{k}:** {v}")
 
         # Reviews
-        if r.get("reviews") not in (None, "", pd.NA) and not (isinstance(r.get("reviews"), float) and pd.isna(r.get("reviews"))):
+        if not is_empty(r.get("reviews")):
             with st.expander("Reviews snapshot"):
                 st.write(r["reviews"])
 

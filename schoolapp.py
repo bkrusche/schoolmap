@@ -9,13 +9,26 @@ st.set_page_config(page_title="Valencia school map (screen-light)", layout="wide
 # ---- helpers ----
 def to_df(schools):
     df = pd.DataFrame(schools).copy()
-    # normalize columns
+
+    # --- enforce schema (CRITICAL) ---
+    REQUIRED_COLUMNS = {
+        "municipality": "",
+        "lat": None,
+        "lon": None,
+        "type": "Unknown",
+    }
+
+    for col, default in REQUIRED_COLUMNS.items():
+        if col not in df.columns:
+            df[col] = default
+        else:
+            df[col] = df[col].fillna(default)
+
+    # numeric safety
     df["lat"] = pd.to_numeric(df["lat"], errors="coerce")
     df["lon"] = pd.to_numeric(df["lon"], errors="coerce")
-    df["type"] = df["type"].fillna("Unknown")
-    df["municipality"] = df["municipality"].fillna("")
-    return df
 
+    return df
 def render_sources(src_list):
     if not src_list:
         return
@@ -155,3 +168,4 @@ with right:
 
 st.divider()
 st.caption("Tip: If any pin looks off, search the address in Google Maps once and update lat/lon in schools_data.py.")
+

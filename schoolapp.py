@@ -1,87 +1,163 @@
-"""
-schools_data.py
-Valencia-area schools dataset for the Streamlit map app.
+import streamlit as st
+import pandas as pd
+import pydeck as pdk
 
-Notes:
-- lat/lon are included to avoid runtime geocoding.
-- Some coordinates are approximations when a primary source with exact coordinates was not accessible.
-  These rows are clearly flagged with `coords_confidence="approx"` and should be validated quickly in Google Maps.
-"""
+from schools_data import SCHOOLS
 
-from __future__ import annotations
+st.set_page_config(page_title="Valencia school map (screen-light)", layout="wide")
 
-SCHOOLS = [
-    # --- Screen-light / alternative pedagogy / Montessori ---
-    {
-        "id": "imagine_montessori_valencia",
-        "name": "Imagine Montessori School (Valencia campus)",
-        "type": "Private",
-        "address": "Calle Meliana, 5, 46019 València, Valencia, Spain",
-        "municipality": "València",
-        "stages": "Infantil (20m–6), Primaria (6–12), Secundaria/Pre-U (12–18) via wider school; Valencia campus reported 2–9",
-        "curriculum": "British + Montessori (accepted by Spanish Ministry of Education)",
-        "languages_day_to_day": "English-led; Spanish/Valencian introduced from Primaria (per directories/official site).",
-        "device_policy_summary": "Montessori approach typically screen-light in early years; confirm exact 1:1 timing by stage/campus during visit.",
-        "pedagogy": "Montessori",
-        "lat": 39.470239,
-        "lon": -0.376805,
-        "coords_confidence": "approx_street_centroid",
-        "reviews": {
-            "micole_rating": None,
-            "micole_reviews": None,
-            "google_rating": None,
-            "google_reviews": None,
-        },
-        "sources": [
-            {"label": "Official site (programmes / Montessori + British)", "ref": "https://imaginemontessori.es/"},
-            {"label": "Official legal notice (Paterna campus address)", "ref": "https://imaginemontessori.es/aviso-legal/"},
-            {"label": "International Schools Database (two-campus addresses)", "ref": "https://www.international-schools-database.com/in/valencia-spain/imagine-montessori-school-valencia"},
-            {"label": "Address reference (Calle Meliana 5)", "ref": "https://startupxplore.com/en/startups/imagine-montessori-school"},
-            {"label": "Street coordinate (calle centroid; validate building # in Maps)", "ref": "https://www.codigospostal.org/calles/4/cp.php?MELIANA=&id=8916"},
-        ],
-        "notes": "The coordinate source provides a street-level lat/lon; verify the pin matches the exact entrance."
-    },
-    {
-        "id": "gencana",
-        "name": "Centro Educativo Gençana",
-        "type": "Concertado/Private",
-        "address": "Camí Ermita Nova, 3, 46110 Godella, Valencia, Spain",
-        "municipality": "Godella",
-        "stages": "Infantil, Primaria, ESO, Bachillerato",
-        "curriculum": "Spanish (LOMLOE) + bilingual programmes (school-defined)",
-        "languages_day_to_day": "Spanish/Valencian + English (school-defined bilingual model; verify immersion by stage).",
-        "device_policy_summary": "Reported Chromebook 1:1 from 3º Primaria (verify current policy with school handbook).",
-        "pedagogy": "Project-based / competency-based (school-defined); verify classroom routines in Infantil/Primaria.",
-        "lat": 39.518333,
-        "lon": -0.410278,
-        "coords_confidence": "municipal_plan_coords",
-        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
-        "sources": [
-            {"label": "School profile (MiCole)", "ref": "https://www.micole.net/valencia/godella/colegio-gencana"},
-            {"label": "Godella municipal plan (includes coords for Camí Ermita Nova 3)", "ref": "https://godella.es/wp-content/uploads/2020/11/PAM_GODELLA_2020_2023.pdf"},
-            {"label": "GVA private/concerted centres registry (basic listing)", "ref": "https://registre.ods.gva.es/centre/export?format=ods&dist=E&dist02=E0&export_all=True&lang=es"},
-        ],
-        "notes": "Coords derived from municipal plan for the address; confirm against Google Maps pin."
-    },
+# ---- helpers ----
+def to_df(schools):
+    df = pd.DataFrame(schools).copy()
+    # normalize columns
+    df["lat"] = pd.to_numeric(df["lat"], errors="coerce")
+    df["lon"] = pd.to_numeric(df["lon"], errors="coerce")
+    df["type"] = df["type"].fillna("Unknown")
+    df["municipality"] = df["municipality"].fillna("")
+    return df
 
-    # --- German pathway ---
-    {
-        "id": "deutsche_schule_valencia",
-        "name": "Colegio Alemán de Valencia (Deutsche Schule Valencia)",
-        "type": "Private",
-        "address": "C/ Jaume Roig, 14–16, 46010 València, Valencia, Spain",
-        "municipality": "València",
-        "stages": "Kindergarten/Infantil, Primaria, Sek I/ESO equivalent, Sek II (Abitur pathway varies by cohort)",
-        "curriculum": "German curriculum + Spanish homologation (verify exact leaving qualifications offered)",
-        "languages_day_to_day": "German-led with Spanish; English often added (verify split by stage).",
-        "device_policy_summary": "Reported tablets issued around 5º Primaria+ (verify current 1:1 start and device type).",
-        "pedagogy": "German school pedagogy; verify early-years approach and play-based learning in Kindergarten.",
-        "lat": 39.4772437,
-        "lon": -0.3594103,
-        "coords_confidence": "map_source",
-        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
-        "sources": [
-            {"label": "Map-based coordinates (Maptons listing)", "ref": "https://maptons.com/pe/c/valencia-2043630208/"},
-        ],
-        "notes": "Coordinates sourced from a map listing; validate against school's official contact page when you visit."
-    },
+def render_sources(src_list):
+    if not src_list:
+        return
+    for s in src_list:
+        label = s.get("label","Source")
+        ref = s.get("ref","")
+        if ref:
+            st.markdown(f"- [{label}]({ref})")
+
+# ---- data ----
+df = to_df(SCHOOLS)
+
+st.title("Valencia-area schools map (screen-light / low-device focus)")
+st.caption("Pins rely on pre-filled coordinates (no runtime geocoding). Schools without coordinates will not appear on the map.")
+
+# ---- sidebar filters ----
+st.sidebar.header("Filters")
+types = sorted(df["type"].dropna().unique().tolist())
+type_sel = st.sidebar.multiselect("School type", types, default=types)
+
+munis = sorted([m for m in df["municipality"].dropna().unique().tolist() if m])
+muni_sel = st.sidebar.multiselect("Municipality", munis, default=munis)
+
+query = st.sidebar.text_input("Search (name / address)", "")
+
+df_f = df[df["type"].isin(type_sel)].copy()
+df_f = df_f[df_f["municipality"].isin(muni_sel)].copy()
+if query.strip():
+    q = query.strip().lower()
+    df_f = df_f[df_f.apply(lambda r: q in str(r.get("name","")).lower() or q in str(r.get("address","")).lower(), axis=1)].copy()
+
+# ---- selection state ----
+if "selected_id" not in st.session_state:
+    st.session_state.selected_id = None
+
+# select first visible if none selected
+if st.session_state.selected_id is None and len(df_f) > 0:
+    st.session_state.selected_id = df_f.iloc[0]["id"]
+
+# ---- layout ----
+left, right = st.columns([2, 1], gap="large")
+
+with left:
+    st.subheader("Map")
+
+    df_map = df_f.dropna(subset=["lat","lon"]).copy()
+
+    # center map
+    if len(df_map) > 0:
+        center_lat = float(df_map["lat"].mean())
+        center_lon = float(df_map["lon"].mean())
+        zoom = 10.5
+    else:
+        center_lat, center_lon, zoom = 39.4699, -0.3763, 10.0  # Valencia center fallback
+
+    # separate selected pin
+    selected = df_map[df_map["id"] == st.session_state.selected_id]
+    others = df_map[df_map["id"] != st.session_state.selected_id]
+
+    layers = []
+    if len(others) > 0:
+        layers.append(
+            pdk.Layer(
+                "ScatterplotLayer",
+                data=others,
+                get_position='[lon, lat]',
+                get_radius=110,
+                get_fill_color=[100, 149, 237, 180],  # cornflower blue
+                pickable=True,
+                auto_highlight=True,
+            )
+        )
+    if len(selected) > 0:
+        layers.append(
+            pdk.Layer(
+                "ScatterplotLayer",
+                data=selected,
+                get_position='[lon, lat]',
+                get_radius=180,
+                get_fill_color=[255, 69, 0, 220],  # red-orange for selected
+                pickable=True,
+                auto_highlight=True,
+            )
+        )
+
+    # NOTE: pydeck tooltip uses fields from data
+
+    view_state = pdk.ViewState(latitude=center_lat, longitude=center_lon, zoom=zoom)
+
+    deck = pdk.Deck(
+        map_style="mapbox://styles/mapbox/streets-v11",
+        initial_view_state=view_state,
+        layers=layers,
+        tooltip={"text": "{name}\n{type}\n{address}"},
+    )
+
+    st.pydeck_chart(deck, use_container_width=True)
+
+    st.subheader("School list (click to select)")
+    
+    if len(df_f) == 0:
+        st.info("No schools match your filters.")
+    else:
+        # clickable list via radio
+        options = df_f["id"].tolist()
+        labels = df_f.apply(lambda r: f"{r['name']} — {r['type']} ({r['municipality']})", axis=1).tolist()
+        idx = options.index(st.session_state.selected_id) if st.session_state.selected_id in options else 0
+
+        chosen = st.radio("",
+                          options=options,
+                          index=idx,
+                          format_func=lambda oid: labels[options.index(oid)],
+                          label_visibility="collapsed")
+        st.session_state.selected_id = chosen
+
+with right:
+    st.subheader("Selected school")
+    row = df[df["id"] == st.session_state.selected_id]
+    if len(row) == 0:
+        st.info("Select a school from the list.")
+    else:
+        r = row.iloc[0].to_dict()
+        st.markdown(f"### {r.get('name','')}")
+        st.markdown(f"**Type:** {r.get('type','')}")
+        st.markdown(f"**Address:** {r.get('address','')}")
+        st.markdown(f"**Stages:** {r.get('stages','')}")
+        st.markdown(f"**Curriculum:** {r.get('curriculum','')}")
+        st.markdown(f"**Languages:** {r.get('languages_day_to_day','')}")
+        st.markdown(f"**Device policy (summary):** {r.get('device_policy_summary','')}")
+        st.markdown(f"**Pedagogy:** {r.get('pedagogy','')}")
+        st.markdown(f"**Coordinate confidence:** {r.get('coords_confidence','')}")
+
+        reviews = r.get("reviews") or {}
+        if any(v is not None for v in reviews.values()):
+            st.markdown("**Reviews (snapshot):**")
+            st.write(reviews)
+
+        if r.get("notes"):
+            st.markdown(f"**Notes:** {r['notes']}")
+
+        st.markdown("**Sources:**")
+        render_sources(r.get("sources") or [])
+
+st.divider()
+st.caption("Tip: If any pin looks off, search the address in Google Maps once and update lat/lon in schools_data.py.")

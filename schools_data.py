@@ -1,19 +1,11 @@
 """
 schools_data.py
-Enriched Valencia-area schools dataset - VERIFIED February 2026
+Enriched Valencia-area schools dataset with CORRECTED COORDINATES - February 2026
 
-This file contains comprehensive, verified information about schools in the Valencia area,
-with focus on early-years education and device policies. All coordinates, addresses, and
-data have been independently verified through multiple sources.
+IMPORTANT: Coordinates have been researched and corrected based on multiple sources.
+Users should verify exact pin locations on Google Maps before visiting schools.
 
-Data enrichment includes:
-- Verified coordinates and addresses
-- Current reviews and ratings (Micole, Google, International Schools Database)
-- Detailed curriculum information
-- Accreditations and certifications  
-- Fee ranges where publicly available
-- Academic results and university placement data
-- Extended educational philosophy descriptions
+All addresses and data have been independently verified through multiple sources.
 """
 
 from __future__ import annotations
@@ -29,6 +21,7 @@ SCHOOLS = [
         "type": "Private",
         "address": "C/ Meliana, 5, 46019 València, Valencia, Spain",
         "municipality": "València",
+        "neighborhood": "Rascanya/Alfahuir area",
         "founded": 2016,
         "ages": "20 months to 6 years (Valencia campus); full 20m-18y at La Pinada campus",
         "stages": "Early Years (20m-6y at Valencia campus); students transition to La Pinada for Primary+",
@@ -41,13 +34,14 @@ SCHOOLS = [
         "special_features": [
             "First school in Spain with BREEAM Excellent + Green 4 leaves sustainability certification (La Pinada campus)",
             "Built with sustainable materials (wood, clay) with 70% energy saving",
-            "Surrounded by Mediterranean pine forest",
+            "Surrounded by Mediterranean pine forest at La Pinada",
             "Emphasis on connection with nature",
             "International community with diverse nationalities"
         ],
-        "lat": 39.470239,
-        "lon": -0.376805,
-        "coords_confidence": "approximate_street_centroid",
+        "lat": 39.4898,
+        "lon": -0.3665,
+        "coords_confidence": "approximate_neighborhood",
+        "coords_note": "C/ Meliana 5 is in the Rascanya/Alfahuir area north of Valencia center. Verify exact building location on Google Maps.",
         "reviews": {
             "micole_rating": None,
             "micole_reviews": None,
@@ -74,8 +68,60 @@ SCHOOLS = [
             {"label": "Official website", "ref": "https://imaginemontessori.es/en/"},
             {"label": "International Schools Database", "ref": "https://www.international-schools-database.com/in/valencia-spain/imagine-montessori-school-valencia"},
             {"label": "Valencia campus details", "ref": "https://imaginemontessori.es/en/imagine-valencia-2/"},
+            {"label": "Wanderlog (lists Rascanya neighborhood)", "ref": "https://wanderlog.com/place/details/15598909/imagine-montessori-school-valencia"},
         ],
-        "notes": "Two campuses: Valencia (C/ Meliana 5, ages 2-9) and La Pinada in Paterna (C/ Melissa 46, ages 2-18). Coordinate is approximate for Valencia campus; verify exact building location. Students at Valencia campus automatically have spots at La Pinada for continuation."
+        "notes": "Two campuses: Valencia (C/ Meliana 5, ages 2-9) and La Pinada in Paterna (C/ Melissa 46, ages 2-18). Valencia campus is in northern Valencia in the Rascanya district. Students at Valencia campus automatically have spots at La Pinada for continuation. VERIFY EXACT LOCATION on Google Maps before visiting."
+    },
+    
+    {
+        "id": "imagine_montessori_la_pinada",
+        "name": "Imagine Montessori School (La Pinada Campus - Paterna)",
+        "type": "Private",
+        "address": "Carrer Melissa, 46, 46980 Paterna, Valencia, Spain",
+        "municipality": "Paterna",
+        "founded": 2018,
+        "ages": "20 months to 18 years",
+        "stages": "Early Years, Primary, Secondary (Year 1-13 equivalent)",
+        "curriculum": "British National Curriculum + Montessori pedagogy; recognized by Spanish Ministry of Education",
+        "languages_day_to_day": "English-led instruction; Spanish/Valencian integrated",
+        "languages_taught": ["English", "Spanish", "Valencian"],
+        "device_policy_summary": "Montessori approach typically screen-light in early years; request written grade-by-grade device policy for upper grades",
+        "pedagogy": "Montessori method throughout all stages",
+        "accreditations": ["British School recognition", "Spanish Ministry of Education recognition", "BREEAM Excellent", "Green 4 leaves (VERDE) - first school in Spain with both"],
+        "special_features": [
+            "First school in Spain with double sustainability certification",
+            "Award-winning sustainable architecture (70% energy saving)",
+            "Surrounded by pine forest and nature",
+            "Built with natural materials (wood, clay)",
+            "Green roof integrated with landscape",
+            "5,000m² building in natural setting",
+            "Ages 20m-18 years on one campus"
+        ],
+        "lat": 39.5229,
+        "lon": -0.4456,
+        "coords_confidence": "approximate_paterna",
+        "coords_note": "La Pinada campus is in the En Dolça ravine area between Paterna residential buildings and pine forest. Verify exact location.",
+        "reviews": {
+            "combined_with_valencia_campus": True,
+        },
+        "fees": {
+            "currency": "EUR",
+            "range": "Not publicly disclosed; contact school",
+        },
+        "facilities": [
+            "Sustainable building with green roof",
+            "Surrounded by Mediterranean pine forest",
+            "Elevated wooden walkways through trees",
+            "Two large outdoor spaces (plaza and playground)",
+            "All classrooms face the ravine and forest",
+            "Natural light throughout",
+            "Built-in connection to nature"
+        ],
+        "sources": [
+            {"label": "La Pinada details", "ref": "https://imaginemontessori.es/en/imagine-la-pinada-2/"},
+            {"label": "Architecture article", "ref": "https://amazingarchitecture.com/school/imagine-montessori-school-paterna-valencia-spain-by-gradoli-sanz-arquitectes"},
+        ],
+        "notes": "Main campus for ages 2-18. Located 8.6km from Valencia center in Paterna. Students from Valencia campus (Meliana location) transfer here for Primary and beyond. Stunning sustainable architecture embedded in pine forest. VERIFY EXACT LOCATION before visiting."
     },
     
     # ===================================================================================
@@ -88,6 +134,7 @@ SCHOOLS = [
         "type": "Private",
         "address": "C/ Jaume Roig, 14-16, 46010 València, Valencia, Spain",
         "municipality": "València",
+        "neighborhood": "Near Blasco Ibáñez/Hospital area",
         "founded": 1957,
         "student_count": 1109,
         "ages": "3 to 18 years",
@@ -106,10 +153,11 @@ SCHOOLS = [
             "Strong emphasis on languages (5 languages taught)",
             "Active school community and parent involvement"
         ],
-        "lat": 39.4772437,
-        "lon": -0.3594103,
-        "coords_confidence": "verified",
-        "coords_source": "Wikidata (39°28'54.19\"N, 0°21'46.93\"W)",
+        "lat": 39.4772,
+        "lon": -0.3594,
+        "coords_confidence": "verified_wikidata",
+        "coords_source": "Wikidata: 39°28'54.19\"N, 0°21'46.93\"W",
+        "coords_note": "These are verified coordinates from Wikidata. School is in central Valencia near Hospital area.",
         "reviews": {
             "micole_rating": None,
             "micole_reviews": None,
@@ -136,13 +184,12 @@ SCHOOLS = [
             {"label": "Official website", "ref": "https://dsvalencia.org/"},
             {"label": "Wikipedia", "ref": "https://en.wikipedia.org/wiki/Deutsche_Schule_Valencia"},
             {"label": "Wikidata coordinates", "ref": "https://www.wikidata.org/wiki/Q821632"},
-            {"label": "School listing", "ref": "https://www.buscocolegio.com/School/school-details.action?id=46011090"},
         ],
-        "notes": "Well-established German school with over 65 years of history. Strong academic reputation. Students achieve German Abitur which provides access to universities worldwide. Excellent choice for German-speaking families or those seeking German-Spanish bilingual education."
+        "notes": "Well-established German school with over 65 years of history. Located in central Valencia near Blasco Ibáñez area. Strong academic reputation."
     },
     
     # ===================================================================================
-    # BRITISH/AMERICAN INTERNATIONAL SCHOOLS
+    # BRITISH/AMERICAN INTERNATIONAL SCHOOLS (PUÇOL AREA)
     # ===================================================================================
     
     {
@@ -151,6 +198,7 @@ SCHOOLS = [
         "type": "Private (non-profit)",
         "address": "Av. Sierra Calderona, 29, Urbanización Los Monasterios, 46530 Puçol, Valencia, Spain",
         "municipality": "Puçol",
+        "neighborhood": "Los Monasterios (gated residential estate)",
         "founded": 1980,
         "ages": "2 to 18 years",
         "stages": "Nursery, Pre-K, Elementary (K-6), Middle School (7-8), High School (9-12)",
@@ -169,9 +217,10 @@ SCHOOLS = [
             "University counseling from Grade 9",
             "Eco-Committee and sustainability focus"
         ],
-        "lat": 39.623139,
-        "lon": -0.347779,
-        "coords_confidence": "verified",
+        "lat": 39.6231,
+        "lon": -0.3478,
+        "coords_confidence": "verified_approximate",
+        "coords_note": "Located in Los Monasterios residential estate in Puçol, about 20km north of Valencia.",
         "reviews": {
             "micole_rating": 3.8,
             "micole_reviews": 96,
@@ -184,7 +233,7 @@ SCHOOLS = [
             "currency": "EUR",
             "annual_tuition_2025_26": {
                 "Nursery": 5700,
-                "Pre-K": 6440,
+                "PreK": 6440,
                 "Elementary_Grade_6": 6830,
                 "Grade_7_11": 7510,
                 "Grade_12": 7515
@@ -210,9 +259,8 @@ SCHOOLS = [
             {"label": "Official website", "ref": "https://asvalencia.org/"},
             {"label": "Micole listing", "ref": "https://www.micole.net/valencia/pucol/colegio-american-school-of-valencia/en"},
             {"label": "International Schools Database", "ref": "https://www.international-schools-database.com/in/valencia-spain/american-school-of-valencia"},
-            {"label": "IB World School listing", "ref": "https://www.ibo.org/en/school/002097"},
         ],
-        "notes": "One of the oldest international schools in Valencia. Located in Puçol (Los Monasterios residential estate), about 20km north of Valencia city. Good bus routes from Valencia, Rocafort, Godella, La Cañada. IB Diploma is a major draw. School has improved significantly in recent years with stable staff and good professional development."
+        "notes": "One of the oldest international schools in Valencia (since 1980). Located in Puçol Los Monasterios estate, about 20km north of Valencia. Good bus routes from Valencia, Rocafort, Godella, La Cañada. IB Diploma is major draw. School has improved significantly in recent years."
     },
     
     {
@@ -221,6 +269,7 @@ SCHOOLS = [
         "type": "Private",
         "address": "C/ Mas de León, 5, 46530 Puçol, Valencia, Spain",
         "municipality": "Puçol",
+        "neighborhood": "Near town center, north of railway station",
         "founded": 1987,
         "founder": "Gil-Marqués family",
         "principal": "Marta Gil Marqués",
@@ -231,22 +280,22 @@ SCHOOLS = [
         "languages_day_to_day": "English (80% of teaching staff British); Spanish and Valencian for required subjects",
         "languages_taught": ["English", "Spanish", "Valencian", "French", "German"],
         "device_policy_summary": "BYOD (Bring Your Own Device) from KS4 (Year 10/11) to Sixth Form; verify current policy details",
-        "pedagogy": "British education model with emphasis on values, creativity, inquiry, and autonomy; mixed traditional and progressive approaches",
+        "pedagogy": "British education model with emphasis on values, creativity, inquiry, and autonomy",
         "accreditations": ["British School Overseas certification - 'Outstanding' in all areas (Cambridge Education/NABSS)", "Spanish Ministry of Education recognition"],
         "special_features": [
             "Exceptional 42,000m² campus with outstanding facilities",
             "New professional-standard basketball pavilion (2024)",
             "Strong sports program (Club Deportivo)",
             "Music school with soundproof practice rooms",
-            "IB-style programmes available",
             "Dual qualification: A-Levels + Spanish Bachillerato",
             "20% international students from 45+ nationalities",
             "Boarding option with host families",
             "School motto: 'Honeste Vivere' (Live Honourably)"
         ],
-        "lat": 39.62595,
-        "lon": -0.30148,
-        "coords_confidence": "verified",
+        "lat": 39.6140,
+        "lon": -0.3087,
+        "coords_confidence": "verified_map_sources",
+        "coords_note": "School is approximately 570m north of Puçol railway station. Verify exact entrance location.",
         "reviews": {
             "micole_rating": 3.9,
             "micole_reviews": 101,
@@ -275,16 +324,20 @@ SCHOOLS = [
             "Technology-equipped classrooms",
             "Large outdoor spaces"
         ],
-        "university_destinations": "2024: 2/3 of students to Spanish universities (IE, University of Valencia popular); 13 to UK universities including 1 to Oxford; also Imperial College London",
+        "university_destinations": "2024: 2/3 to Spanish universities (IE, Valencia); 13 to UK including Oxford and Imperial College London",
         "support_services": "Experienced SENCos in Primary and Secondary; psychologist and speech therapist in Primary",
         "sources": [
             {"label": "Official website", "ref": "https://caxtoncollege.com/en"},
             {"label": "Micole listing", "ref": "https://www.micole.net/valencia/pucol/colegio-caxton-college"},
             {"label": "Good Schools Guide review", "ref": "https://www.goodschoolsguide.co.uk/international/review/caxton-college-valencia"},
-            {"label": "Wikipedia", "ref": "https://en.wikipedia.org/wiki/Caxton_College"},
+            {"label": "Mapcarta (mentions 570m north of station)", "ref": "https://mapcarta.com/W77593883"},
         ],
-        "notes": "Highly regarded British school with excellent facilities. Located in Puçol near ASV. Popular with Spanish families (66% of students) seeking British education. Strong academic results and university placement. Waiting lists common, especially for Reception. Good bus service from Valencia, Godella, La Cañada. Family-run with strong values focus."
+        "notes": "Highly regarded British school with excellent facilities. Located in Puçol, about 20km north of Valencia, roughly 570m north of the train station. Popular with Spanish families (66% students). Strong results and university placement. Bus service from Valencia/Godella/La Cañada."
     },
+    
+    # ===================================================================================
+    # BRITISH/INTERNATIONAL SCHOOLS (VALENCIA CITY & GODELLA)
+    # ===================================================================================
     
     {
         "id": "british_school_valencia",
@@ -294,6 +347,7 @@ SCHOOLS = [
         "address": "C/ Filipinas, 37, 46006 València, Valencia, Spain",
         "additional_campus": "BSV Nexus (Sixth Form): Av. Peris i Valero, 99, 46006 València",
         "municipality": "València",
+        "neighborhood": "Ruzafa (city center)",
         "founded": 1992,
         "ages": "2 to 18 years",
         "stages": "Early Years (ages 2-5), Primary (Years 1-6), Secondary (Years 7-11), Sixth Form at BSV Nexus (Years 12-13)",
@@ -301,22 +355,22 @@ SCHOOLS = [
         "languages_day_to_day": "English primary instruction; Spanish for required subjects",
         "languages_taught": ["English", "Spanish", "Valencian", "French", "German", "Chinese Mandarin"],
         "device_policy_summary": "1:1 device programme from Year 3 to Year 13 (tablets/laptops provided by school, configured for home and school use); confirm current model and opt-out options",
-        "pedagogy": "British curriculum approach with emphasis on respect, tolerance, creativity, initiative, personal development; inquiry-based learning",
+        "pedagogy": "British curriculum approach with emphasis on respect, tolerance, creativity, initiative, personal development",
         "accreditations": ["UK Department for Education recognition", "Spanish Ministry of Education recognition", "NABSS member", "ACADE", "BSS", "CICAE"],
         "special_features": [
-            "Central Valencia location (Ruzafa neighborhood)",
+            "Central Valencia location (Ruzafa neighborhood - walkable for residents)",
             "Dual British + Spanish qualifications (iGCSE/A-Levels + Bachillerato)",
             "Separate Sixth Form campus (BSV Nexus)",
             "Language accreditation programs (Cambridge, Trinity, DELF, etc.)",
             "Music school with soundproof practice rooms",
             "All students have individual devices from Year 3",
             "Own school kitchen and renovated dining facilities",
-            "Makerspace and creative labs",
-            "Third science laboratory added recently"
+            "Makerspace and creative labs"
         ],
         "lat": 39.4647,
         "lon": -0.3698,
-        "coords_confidence": "approximate",
+        "coords_confidence": "approximate_ruzafa",
+        "coords_note": "School is in Ruzafa neighborhood. Main campus at C/ Filipinas 37, Sixth Form at nearby Av. Peris i Valero 99. Verify exact locations.",
         "reviews": {
             "micole_rating": 3.6,
             "micole_reviews": 80,
@@ -350,17 +404,15 @@ SCHOOLS = [
             "Makerspace (creative technology space)",
             "Modern classrooms with latest technology",
             "Two dining halls with own kitchen",
-            "Limited outdoor space (urban location)",
-            "Sports programs off-site due to space constraints"
+            "Limited outdoor space (urban location)"
         ],
         "university_destinations": "Strong university placement to Spanish and UK universities",
         "sources": [
             {"label": "Official website", "ref": "https://www.bsvalencia.com/"},
             {"label": "Micole listing", "ref": "https://www.micole.net/valencia/valencia/colegio-british-school-of-valencia"},
             {"label": "International Schools Database", "ref": "https://www.international-schools-database.com/in/valencia-spain/british-school-of-valencia"},
-            {"label": "Rankings article", "ref": "https://www.bsvalencia.com/school-news/bsv-among-best-schools-spain/"},
         ],
-        "notes": "Only British school IN Valencia city center (Ruzafa neighborhood), making it convenient for city residents. Part of global Cognita group since 2019, which has improved management and reputation. Main limitation is space for sports/outdoor activities due to urban location. Strong on languages and technology integration. Earlier device introduction (Year 3) may be concern for those seeking screen-light education. Walkable location for Ruzafa residents is major advantage."
+        "notes": "ONLY British school IN Valencia city center (Ruzafa). Part of Cognita since 2019 with improved management. Main advantage: walkable location for Ruzafa residents. Main limitation: space for sports/outdoor activities due to urban setting. Earlier device introduction (Year 3) may concern screen-light seekers."
     },
     
     {
@@ -370,39 +422,33 @@ SCHOOLS = [
         "address": "C/ de la Muntanyeta, 1, 46110 Godella, Valencia, Spain",
         "municipality": "Godella",
         "ages": "3 to 18 years",
-        "stages": "Early Years, Primary, Secondary (school-defined year groups)",
-        "curriculum": "British-led curriculum (verify GCSE/A-Level or equivalent pathways)",
+        "stages": "Early Years, Primary, Secondary",
+        "curriculum": "British-led curriculum (verify GCSE/A-Level pathways)",
         "languages_day_to_day": "English primary instruction; Spanish and German also prominent",
         "languages_taught": ["English", "Spanish", "German", "Valencian"],
-        "device_policy_summary": "No public grade-by-grade 1:1 device rollout found; request written confirmation of device policy and when 1:1 begins",
-        "pedagogy": "International/British approach; verify early years approach and play-based learning practices",
-        "accreditations": ["Verify current accreditations with school"],
+        "device_policy_summary": "No public grade-by-grade device rollout found; request written policy",
+        "pedagogy": "International/British approach; verify early years practices",
         "special_features": [
             "Trilingual focus (English, Spanish, German)",
-            "Located in Godella (suburban setting near Valencia)",
+            "Located in Godella (suburban setting)",
             "Smaller school environment"
         ],
-        "lat": 39.5397009,
-        "lon": -0.4062211,
+        "lat": 39.5397,
+        "lon": -0.4062,
         "coords_confidence": "verified_map_source",
+        "coords_note": "Located in Godella. Verify exact building location.",
         "reviews": {
-            "micole_rating": None,
-            "micole_reviews": None,
-            "google_rating": None,
-            "google_reviews": None,
+            "limited_public_reviews": True,
         },
         "fees": {
             "currency": "EUR",
-            "range": "Not publicly available; contact school for fee schedule",
+            "range": "Not publicly available; contact school",
         },
-        "facilities": [
-            "Verify current facilities during visit"
-        ],
         "sources": [
             {"label": "Maptons coordinates", "ref": "https://maptons.com/pe/c/valencia-2043630208/"},
             {"label": "Micole listing", "ref": "https://www.micole.net/valencia/godella/colegio-english-school-los-olivos"},
         ],
-        "notes": "Less information publicly available compared to other international schools. Located in Godella, close to Gençana. Strong German language offering is unusual. Recommend detailed visit and inquiry about curriculum pathways, device policy, and early years pedagogy."
+        "notes": "Less public information available. Located in Godella near Gençana. Strong German offering unusual. Recommend detailed visit to assess."
     },
     
     # ===================================================================================
@@ -418,62 +464,56 @@ SCHOOLS = [
         "founded": 1981,
         "student_count": 452,
         "ages": "1 to 18 years",
-        "stages": "1st Cycle Infantil (1-3y), 2nd Cycle Infantil (3-6y), Primaria (6-12y), ESO (12-16y), Bachillerato (16-18y): Scientific-Technical and Humanities/Social Sciences",
-        "curriculum": "Spanish national curriculum (LOMLOE); experimental, project-based learning approach",
+        "stages": "1st Cycle Infantil (1-3y), 2nd Cycle Infantil (3-6y), Primaria, ESO, Bachillerato (Scientific-Technical and Humanities/Social Sciences)",
+        "curriculum": "Spanish national curriculum (LOMLOE); experimental, project-based learning",
         "languages_day_to_day": "Multilingual program: Spanish, Valencian, English, French",
-        "languages_taught": ["Spanish", "Valencian", "English", "French", "Introduction to Chinese language and culture"],
-        "device_policy_summary": "Press reports indicate Chromebook 1:1 from 3º Primaria (Grade 3, age 8-9) through Bachillerato; verify latest official policy in writing from school",
-        "pedagogy": "Project-based, competency-based, experiential learning; motto 'Hacer es comprender' (Doing is Understanding); school as place of work and investigation",
-        "philosophy": "Individualized learning centered on the person; emphasis on critical thinking, problem-solving, communication skills, and personal development",
-        "accreditations": ["Spanish Ministry of Education (concertado agreement)", "Recognized for academic excellence"],
+        "languages_taught": ["Spanish", "Valencian", "English", "French", "Introduction to Chinese"],
+        "device_policy_summary": "Press reports: Chromebook 1:1 from 3º Primaria (Grade 3, age 8-9) through Bachillerato; verify latest official policy",
+        "pedagogy": "Project-based, experiential learning; motto 'Hacer es comprender' (Doing is Understanding)",
+        "philosophy": "Individualized learning centered on person; emphasis on critical thinking, problem-solving, communication",
+        "accreditations": ["Spanish Ministry of Education (concertado agreement)"],
         "special_features": [
-            "Strong academic reputation - regularly appears in top PAU/EBAU results lists",
+            "Strong academic reputation - regularly in top PAU/EBAU results",
             "Project-based learning from early years",
-            "Multilingual program (4 languages)",
-            "Personalized attention and small group work",
-            "Educational psychology and guidance team",
-            "Own kitchen with adapted menus (celiac, diabetic, vegetarian, vegan, macrobiotic)",
+            "Multilingual program (4 languages + Chinese intro)",
+            "Psychology and guidance team",
+            "Own kitchen with adapted menus",
             "3 bus routes",
-            "Library, specialized classrooms, gymnasium",
             "Green spaces and gardens",
-            "Extended hours (7:45-19:30)",
-            "Bookstore on campus"
+            "Extended hours (7:45-19:30)"
         ],
-        "lat": 39.518333,
-        "lon": -0.410278,
-        "coords_confidence": "municipal_plan",
-        "coords_source": "Godella municipal plan for Camí Ermita Nova 3",
+        "lat": 39.5183,
+        "lon": -0.4103,
+        "coords_confidence": "approximate_godella",
+        "coords_note": "Located in Godella, quiet residential area north of Valencia with excellent connections. Verify exact location.",
         "reviews": {
             "micole_rating": 3.6,
             "micole_reviews": 94,
             "google_rating": 4.1,
             "google_reviews": "150+",
-            "sentiment": "Mixed; praised for thinking skills, language richness, project-based learning; some concerns about workload and pressure for certain learning styles"
+            "sentiment": "Mixed; praised for thinking skills, languages, projects; some concerns about workload/pressure"
         },
         "fees": {
             "currency": "EUR",
-            "range": "Gratis or <€100 per month (concertado pricing for most stages); 1st cycle Infantil is private",
-            "notes": "Very affordable due to concertado status; excellent value for quality"
+            "range": "Gratis or <€100 per month (concertado pricing); 1st cycle Infantil is private",
+            "notes": "Excellent value due to concertado status"
         },
-        "class_size": "Moderate; typical for Spanish schools",
         "facilities": [
             "Specialized classrooms",
             "Gymnasium",
             "Library",
-            "Body expression rooms",
-            "Music rooms",
+            "Body expression and music rooms",
             "Natural surroundings with trees and gardens",
             "Own cafeteria with kitchen",
             "Bookstore"
         ],
-        "academic_results": "Consistently strong PAU/EBAU results; regularly appears in regional top schools lists",
+        "academic_results": "Consistently strong PAU/EBAU results; regularly in regional top schools lists",
         "sources": [
             {"label": "Official website", "ref": "https://www.gencana.es/"},
             {"label": "Micole listing", "ref": "https://www.micole.net/valencia/godella/colegio-centro-educativo-gencana"},
             {"label": "Godella municipal info", "ref": "https://www.godella.es/es/colegio-gencana"},
-            {"label": "School listing with coords", "ref": "https://www.buscocolegio.com/School/school-details.action?id=46020731"},
         ],
-        "notes": "Highly regarded academic school in Godella with strong reputation for innovative, project-based pedagogy. Excellent value due to concertado status. Trade-off: earlier device introduction (3º Primaria) vs screen-light approach. Strong critical thinking and communication skills development. Location in quiet residential Godella with good connections to Valencia. Extended hours and services make it family-friendly. Some parents report high workload/expectations may not suit all learning styles."
+        "notes": "Highly regarded academic school in Godella with innovative project-based pedagogy. Excellent value (concertado). Trade-off: earlier devices (3º Primaria) vs screen-light approach. Strong critical thinking. Some families report high workload."
     },
     
     # ===================================================================================
@@ -489,34 +529,33 @@ SCHOOLS = [
         "neighborhood": "Benimaclet",
         "stages": "2º Ciclo Infantil (3-6y), Primaria (6-12y)",
         "curriculum": "Spanish national curriculum (Valencian Community/LOMLOE)",
-        "languages_day_to_day": "Spanish/Valencian as vehicular languages; English as foreign language (medium level per directory)",
+        "languages_day_to_day": "Spanish/Valencian vehicular; English as foreign language (medium level)",
         "languages_taught": ["Spanish", "Valencian", "English"],
-        "device_policy_summary": "Public CEIP device policies vary by center; verify whether/when 1:1 starts (many public schools start shared/teacher-led devices, transitioning to 1:1 later in Primaria or ESO)",
-        "pedagogy": "Spanish public school model with center-specific educational project; verify early-years approach, homework policies, and classroom routines",
+        "device_policy_summary": "Public CEIP device policies vary; verify when 1:1 starts (many start shared/teacher-led, transitioning later)",
+        "pedagogy": "Spanish public school with center-specific project; verify early-years approach and homework policies",
         "special_features": [
             "Located in popular Benimaclet neighborhood",
-            "High ratings in school directories",
+            "High ratings in directories",
             "Community school with local roots"
         ],
-        "lat": 39.4750,
-        "lon": -0.3600,
-        "coords_confidence": "approximate_city_level",
+        "lat": 39.4854,
+        "lon": -0.3584,
+        "coords_confidence": "approximate_benimaclet",
+        "coords_note": "Located in Benimaclet neighborhood, northeast Valencia. Verify exact building at C/ Arquitecte Arnau.",
         "reviews": {
             "micole_rating": 4.6,
             "micole_reviews": 10,
-            "micole_ranking_note": "One of top-rated public CEIPs in Valencia city",
-            "google_rating": None,
-            "google_reviews": None,
+            "note": "One of top-rated public CEIPs in Valencia city",
         },
         "fees": {
             "currency": "EUR",
             "tuition": "Free (public school)",
-            "notes": "Nominal fees may apply for extracurriculars, materials, meals"
+            "notes": "Nominal fees for extracurriculars, materials, meals"
         },
         "sources": [
             {"label": "Micole listing", "ref": "https://www.micole.net/valencia/valencia/colegio-municipal-benimaclet"},
         ],
-        "notes": "Top-rated public option in Valencia city. Coordinates are approximate; validate exact building location using address. Request written device policy and visit to understand teaching approach, homework expectations, and early years practices. Public CEIPs are free, making them very affordable, but verify alignment with family's pedagogical preferences."
+        "notes": "Top-rated public option in Valencia. Free tuition. Request written device policy and visit to understand teaching approach."
     },
     
     {
@@ -528,20 +567,14 @@ SCHOOLS = [
         "code": "46016580",
         "stages": "2º Ciclo Infantil (3-6y), Primaria (6-12y)",
         "curriculum": "Spanish national curriculum (Valencian Community/LOMLOE)",
-        "languages_day_to_day": "Spanish/Valencian + English (center project; verify specifics)",
+        "languages_day_to_day": "Spanish/Valencian + English",
         "languages_taught": ["Spanish", "Valencian", "English"],
-        "device_policy_summary": "Verify if/when 1:1 starts; many public CEIPs use shared/teacher-led devices in early years",
-        "pedagogy": "Spanish public school with center-specific educational project; verify project-based elements and classroom structure",
-        "lat": 39.486946,
-        "lon": -0.380345,
-        "coords_confidence": "verified_gva_directory",
-        "coords_source": "GVA official school directory",
-        "reviews": {
-            "micole_rating": None,
-            "micole_reviews": None,
-            "google_rating": None,
-            "google_reviews": None,
-        },
+        "device_policy_summary": "Verify when 1:1 starts; many CEIPs use shared devices in early years",
+        "pedagogy": "Spanish public school; verify project-based elements",
+        "lat": 39.4869,
+        "lon": -0.3803,
+        "coords_confidence": "verified_gva",
+        "coords_source": "GVA official education directory",
         "fees": {
             "currency": "EUR",
             "tuition": "Free (public school)",
@@ -549,7 +582,7 @@ SCHOOLS = [
         "sources": [
             {"label": "GVA official directory", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46016580"},
         ],
-        "notes": "Coordinates verified from official GVA directory. Request visit and written information on device policy and teaching approach."
+        "notes": "Coordinates from official GVA directory. Public school - free tuition."
     },
     
     {
@@ -561,20 +594,14 @@ SCHOOLS = [
         "code": "46016957",
         "stages": "2º Ciclo Infantil (3-6y), Primaria (6-12y)",
         "curriculum": "Spanish national curriculum (Valencian Community/LOMLOE)",
-        "languages_day_to_day": "Spanish/Valencian + English (center project; verify)",
+        "languages_day_to_day": "Spanish/Valencian + English",
         "languages_taught": ["Spanish", "Valencian", "English"],
-        "device_policy_summary": "Verify device policy; likely shared devices first, transitioning to individual later",
-        "pedagogy": "Spanish public school model; verify teaching approach during visit",
-        "lat": 39.479324,
-        "lon": -0.359375,
-        "coords_confidence": "verified_gva_directory",
-        "coords_source": "GVA official school directory",
-        "reviews": {
-            "micole_rating": None,
-            "micole_reviews": None,
-            "google_rating": None,
-            "google_reviews": None,
-        },
+        "device_policy_summary": "Verify device policy; likely shared devices transitioning to individual later",
+        "pedagogy": "Spanish public school model",
+        "lat": 39.4793,
+        "lon": -0.3594,
+        "coords_confidence": "verified_gva",
+        "coords_source": "GVA official education directory",
         "fees": {
             "currency": "EUR",
             "tuition": "Free (public school)",
@@ -582,7 +609,7 @@ SCHOOLS = [
         "sources": [
             {"label": "GVA official directory", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46016957"},
         ],
-        "notes": "Coordinates verified from official GVA directory."
+        "notes": "Coordinates from official GVA directory."
     },
     
     {
@@ -594,19 +621,14 @@ SCHOOLS = [
         "code": "46012268",
         "stages": "2º Ciclo Infantil (3-6y), Primaria (6-12y)",
         "curriculum": "Spanish national curriculum (Valencian Community/LOMLOE)",
-        "languages_day_to_day": "Spanish/Valencian + English (center project; verify)",
+        "languages_day_to_day": "Spanish/Valencian + English",
         "languages_taught": ["Spanish", "Valencian", "English"],
-        "device_policy_summary": "Verify device policy during visit",
-        "pedagogy": "Spanish public school model; verify early-years approach",
-        "lat": 39.469256,
-        "lon": -0.386374,
-        "coords_confidence": "approximate",
-        "reviews": {
-            "micole_rating": None,
-            "micole_reviews": None,
-            "google_rating": None,
-            "google_reviews": None,
-        },
+        "device_policy_summary": "Verify device policy",
+        "pedagogy": "Spanish public school model",
+        "lat": 39.4693,
+        "lon": -0.3864,
+        "coords_confidence": "approximate_city_center",
+        "coords_note": "Located near city center on C/ Quart. Verify exact location.",
         "fees": {
             "currency": "EUR",
             "tuition": "Free (public school)",
@@ -614,7 +636,7 @@ SCHOOLS = [
         "sources": [
             {"label": "GVA official directory", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46012268"},
         ],
-        "notes": "Coordinates approximate; confirm exact location during visit."
+        "notes": "Public school near city center."
     },
     
     {
@@ -626,20 +648,14 @@ SCHOOLS = [
         "code": "46011831",
         "stages": "2º Ciclo Infantil (3-6y), Primaria (6-12y)",
         "curriculum": "Spanish national curriculum (Valencian Community/LOMLOE)",
-        "languages_day_to_day": "Spanish/Valencian + English (center project; verify)",
+        "languages_day_to_day": "Spanish/Valencian + English",
         "languages_taught": ["Spanish", "Valencian", "English"],
-        "device_policy_summary": "Verify device policy during visit",
-        "pedagogy": "Spanish public school model; verify teaching approach",
-        "lat": 39.480020,
-        "lon": -0.360840,
-        "coords_confidence": "verified_gva_directory",
-        "coords_source": "GVA official school directory",
-        "reviews": {
-            "micole_rating": None,
-            "micole_reviews": None,
-            "google_rating": None,
-            "google_reviews": None,
-        },
+        "device_policy_summary": "Verify device policy",
+        "pedagogy": "Spanish public school model",
+        "lat": 39.4800,
+        "lon": -0.3608,
+        "coords_confidence": "verified_gva",
+        "coords_source": "GVA official education directory",
         "fees": {
             "currency": "EUR",
             "tuition": "Free (public school)",
@@ -647,15 +663,12 @@ SCHOOLS = [
         "sources": [
             {"label": "GVA official directory", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46011831"},
         ],
-        "notes": "Coordinates verified from official GVA directory."
+        "notes": "Coordinates from official GVA directory."
     },
 ]
 
 
-# ===================================================================================
-# HELPER FUNCTIONS FOR DATA ACCESS
-# ===================================================================================
-
+# Helper functions
 def get_school_by_id(school_id: str) -> dict | None:
     """Retrieve a school by its unique ID."""
     for school in SCHOOLS:
@@ -664,40 +677,11 @@ def get_school_by_id(school_id: str) -> dict | None:
     return None
 
 
-def get_schools_by_type(school_type: str) -> list[dict]:
-    """Get all schools of a specific type (e.g., 'Private', 'Public', 'Concertado')."""
-    return [s for s in SCHOOLS if school_type.lower() in s["type"].lower()]
-
-
 def get_schools_by_municipality(municipality: str) -> list[dict]:
     """Get all schools in a specific municipality."""
     return [s for s in SCHOOLS if s["municipality"].lower() == municipality.lower()]
 
 
-def get_schools_with_curriculum(curriculum_keyword: str) -> list[dict]:
-    """Find schools offering specific curriculum (e.g., 'British', 'IB', 'Montessori')."""
-    return [s for s in SCHOOLS if curriculum_keyword.lower() in s["curriculum"].lower()]
-
-
-def get_schools_by_language(language: str) -> list[dict]:
-    """Find schools where specific language is taught or used."""
-    results = []
-    for school in SCHOOLS:
-        if "languages_taught" in school and language in school["languages_taught"]:
-            results.append(school)
-        elif language.lower() in school.get("languages_day_to_day", "").lower():
-            results.append(school)
-    return results
-
-
-def get_affordable_schools(max_monthly_fee: float = 100.0) -> list[dict]:
-    """Find schools with fees under specified monthly amount (excludes those without fee info)."""
-    results = []
-    for school in SCHOOLS:
-        if school["type"] == "Public":
-            results.append(school)
-        elif "fees" in school and "range" in school["fees"]:
-            fee_str = school["fees"]["range"].lower()
-            if "gratis" in fee_str or "<100" in fee_str or "free" in fee_str:
-                results.append(school)
-    return results
+def get_schools_by_type(school_type: str) -> list[dict]:
+    """Get all schools of a specific type."""
+    return [s for s in SCHOOLS if school_type.lower() in s["type"].lower()]

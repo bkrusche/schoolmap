@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import folium
 from streamlit_folium import st_folium
 from schools_data import SCHOOLS
@@ -117,6 +118,39 @@ with col1:
                 if abs(school["lat"] - clicked_lat) < 0.001 and abs(school["lon"] - clicked_lng) < 0.001:
                     st.session_state.selected_school = school
                     break
+    
+    # Add schools table below the map
+    st.markdown("---")
+    st.markdown("### 📊 All Schools at a Glance")
+    
+    # Prepare table data
+    table_data = []
+    for school in SCHOOLS:
+        table_data.append({
+            "School": school["name"],
+            "Type": school["type"],
+            "Ages": school.get("ages", "N/A"),
+            "Curriculum": school.get("curriculum", "N/A"),
+            "Languages": school.get("languages", "N/A"),
+            "Screen Policy": school.get("screen_policy", "N/A")[:50] + "..." if school.get("screen_policy", "") and len(school.get("screen_policy", "")) > 50 else school.get("screen_policy", "N/A")
+        })
+    
+    df = pd.DataFrame(table_data)
+    
+    # Display as interactive dataframe
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "School": st.column_config.TextColumn("School Name", width="large"),
+            "Type": st.column_config.TextColumn("Type", width="small"),
+            "Ages": st.column_config.TextColumn("Ages", width="small"),
+            "Curriculum": st.column_config.TextColumn("Curriculum", width="medium"),
+            "Languages": st.column_config.TextColumn("Languages", width="medium"),
+            "Screen Policy": st.column_config.TextColumn("Screen Policy", width="large")
+        }
+    )
 
 with col2:
     st.markdown("### 📋 School Information")

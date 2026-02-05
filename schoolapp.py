@@ -1,119 +1,268 @@
-# app.py
-import streamlit as st
-import pandas as pd
-import pydeck as pdk
+"""
+schools_data.py
+Valencia-area schools dataset for the Streamlit map app.
 
-from schools_data import SCHOOLS
+Notes:
+- lat/lon are included to avoid runtime geocoding.
+- Some coordinates are approximations when a primary source with exact coordinates was not accessible.
+  These rows are clearly flagged with `coords_confidence="approx"` and should be validated quickly in Google Maps.
+"""
 
-st.set_page_config(page_title="Valencia Schools Map", layout="wide")
+from __future__ import annotations
 
-# ---- Load data ----
-df = pd.DataFrame(SCHOOLS)
+SCHOOLS = [
+    # --- Screen-light / alternative pedagogy / Montessori ---
+    {
+        "id": "imagine_montessori_valencia",
+        "name": "Imagine Montessori School (Valencia campus)",
+        "type": "Private",
+        "address": "Calle Meliana, 5, 46019 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Infantil (20m–6), Primaria (6–12), Secundaria/Pre-U (12–18) via wider school; Valencia campus reported 2–9",
+        "curriculum": "British + Montessori (accepted by Spanish Ministry of Education)",
+        "languages_day_to_day": "English-led; Spanish/Valencian introduced from Primaria (per directories/official site).",
+        "device_policy_summary": "Montessori approach typically screen-light in early years; confirm exact 1:1 timing by stage/campus during visit.",
+        "pedagogy": "Montessori",
+        "lat": 39.470239,
+        "lon": -0.376805,
+        "coords_confidence": "approx_street_centroid",
+        "reviews": {
+            "micole_rating": None,
+            "micole_reviews": None,
+            "google_rating": None,
+            "google_reviews": None,
+        },
+        "sources": [
+            {"label": "Official site (programmes / Montessori + British)", "ref": "https://imaginemontessori.es/"},
+            {"label": "Official legal notice (Paterna campus address)", "ref": "https://imaginemontessori.es/aviso-legal/"},
+            {"label": "International Schools Database (two-campus addresses)", "ref": "https://www.international-schools-database.com/in/valencia-spain/imagine-montessori-school-valencia"},
+            {"label": "Address reference (Calle Meliana 5)", "ref": "https://startupxplore.com/en/startups/imagine-montessori-school"},
+            {"label": "Street coordinate (calle centroid; validate building # in Maps)", "ref": "https://www.codigospostal.org/calles/4/cp.php?MELIANA=&id=8916"},
+        ],
+        "notes": "The coordinate source provides a street-level lat/lon; verify the pin matches the exact entrance."
+    },
+    {
+        "id": "gencana",
+        "name": "Centro Educativo Gençana",
+        "type": "Concertado/Private",
+        "address": "Camí Ermita Nova, 3, 46110 Godella, Valencia, Spain",
+        "municipality": "Godella",
+        "stages": "Infantil, Primaria, ESO, Bachillerato",
+        "curriculum": "Spanish (LOMLOE) + bilingual programmes (school-defined)",
+        "languages_day_to_day": "Spanish/Valencian + English (school-defined bilingual model; verify immersion by stage).",
+        "device_policy_summary": "Reported Chromebook 1:1 from 3º Primaria (verify current policy with school handbook).",
+        "pedagogy": "Project-based / competency-based (school-defined); verify classroom routines in Infantil/Primaria.",
+        "lat": 39.518333,
+        "lon": -0.410278,
+        "coords_confidence": "municipal_plan_coords",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "School profile (MiCole)", "ref": "https://www.micole.net/valencia/godella/colegio-gencana"},
+            {"label": "Godella municipal plan (includes coords for Camí Ermita Nova 3)", "ref": "https://godella.es/wp-content/uploads/2020/11/PAM_GODELLA_2020_2023.pdf"},
+            {"label": "GVA private/concerted centres registry (basic listing)", "ref": "https://registre.ods.gva.es/centre/export?format=ods&dist=E&dist02=E0&export_all=True&lang=es"},
+        ],
+        "notes": "Coords derived from municipal plan for the address; confirm against Google Maps pin."
+    },
 
-# Basic validation to prevent duplicates / missing coords
-def validate(df: pd.DataFrame) -> list[str]:
-    issues = []
-    if df["name"].duplicated().any():
-        dups = df[df["name"].duplicated()]["name"].tolist()
-        issues.append(f"Duplicate school names: {sorted(set(dups))}")
-    missing = df[df["lat"].isna() | df["lon"].isna()]
-    if len(missing) > 0:
-        issues.append(f"Missing coordinates for: {missing['name'].tolist()}")
-    return issues
+    # --- German pathway ---
+    {
+        "id": "deutsche_schule_valencia",
+        "name": "Colegio Alemán de Valencia (Deutsche Schule Valencia)",
+        "type": "Private",
+        "address": "C/ Jaume Roig, 14–16, 46010 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Kindergarten/Infantil, Primaria, Sek I/ESO equivalent, Sek II (Abitur pathway varies by cohort)",
+        "curriculum": "German curriculum + Spanish homologation (verify exact leaving qualifications offered)",
+        "languages_day_to_day": "German-led with Spanish; English often added (verify split by stage).",
+        "device_policy_summary": "Reported tablets issued around 5º Primaria+ (verify current 1:1 start and device type).",
+        "pedagogy": "German school pedagogy; verify early-years approach and play-based learning in Kindergarten.",
+        "lat": 39.4772437,
+        "lon": -0.3594103,
+        "coords_confidence": "map_source",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "Map-based coordinates (Maptons listing)", "ref": "https://maptons.com/pe/c/valencia-2043630208/"},
+        ],
+        "notes": "Coordinates sourced from a map listing; validate against school's official contact page when you visit."
+    },
 
-issues = validate(df)
-if issues:
-    st.error("Dataset issues detected:\n- " + "\n- ".join(issues))
-    st.stop()
+    # --- English international pathway ---
+    {
+        "id": "american_school_valencia",
+        "name": "American School of Valencia",
+        "type": "Private",
+        "address": "Av. Sierra Calderona, 29, 46530 Puçol (Urbanización Los Monasterios), Valencia, Spain",
+        "municipality": "Puçol",
+        "stages": "Early Years, Primary, Secondary (Middle/High School)",
+        "curriculum": "American/international (school-defined; verify diplomas/AP/IB if offered)",
+        "languages_day_to_day": "English-led + Spanish",
+        "device_policy_summary": "Reported 1:1 Chromebook in Middle School (verify by grade and device type).",
+        "pedagogy": "International school model; verify play-based EYFS-style practice in early years.",
+        "lat": 39.623139,
+        "lon": -0.347779,
+        "coords_confidence": "mapcarta",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "Mapcarta (location coordinates)", "ref": "https://mapcarta.com/30163098"},
+            {"label": "MiCole school listing (fees/reviews vary; check)", "ref": "https://www.micole.net/valencia/puzol/colegio-american-school-of-valencia"},
+        ],
+    },
+    {
+        "id": "caxton_college",
+        "name": "Caxton College",
+        "type": "Private",
+        "address": "C/ Mas de León, 5, 46530 Puçol, Valencia, Spain",
+        "municipality": "Puçol",
+        "stages": "Infantil, Primaria, Secondary (British Year groups) + Bach/Pre-U pathways (school-defined)",
+        "curriculum": "British-led (check GCSE/A-Levels or equivalents) + Spanish subjects",
+        "languages_day_to_day": "English-led + Spanish",
+        "device_policy_summary": "Reported 1:1 iPad from Year 5 (verify current policy by year group).",
+        "pedagogy": "British international school model; verify early-years routines and phonics approach.",
+        "lat": 39.614194,
+        "lon": -0.308743,
+        "coords_confidence": "mapcarta",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "Mapcarta (location coordinates)", "ref": "https://mapcarta.com/25933584"},
+        ],
+    },
+    {
+        "id": "british_school_valencia",
+        "name": "British School of Valencia",
+        "type": "Private",
+        "address": "C/ del Dr. Peset Aleixandre, 53, 46025 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Early Years, Primary, Secondary (school-defined)",
+        "curriculum": "British-led + Spanish subjects",
+        "languages_day_to_day": "English-led + Spanish",
+        "device_policy_summary": "Reported 1:1 from Year 3 (verify current policy).",
+        "pedagogy": "British international model; verify play-based early years.",
+        "lat": 39.4927,
+        "lon": -0.3827,
+        "coords_confidence": "approx",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "School listing (address; verify) - MiCole", "ref": "https://www.micole.net/valencia/valencia/colegio-british-school-of-valencia"},
+        ],
+        "notes": "Coordinates approximate (city-level). Please validate exact pin with Google Maps."
+    },
+    {
+        "id": "english_school_los_olivos",
+        "name": "English School Los Olivos",
+        "type": "Private",
+        "address": "C/ de la Muntanyeta, 1, 46110 Godella, Valencia, Spain",
+        "municipality": "Godella",
+        "stages": "Infantil, Primaria, Secondary (school-defined)",
+        "curriculum": "British-led / mixed (verify GCSE/A-Levels or equivalents)",
+        "languages_day_to_day": "English-led + Spanish",
+        "device_policy_summary": "Device policy varies; verify 1:1 start year and device type.",
+        "pedagogy": "International / British approach; verify early years.",
+        "lat": 39.5397009,
+        "lon": -0.4062211,
+        "coords_confidence": "map_source",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "Map-based coordinates (Maptons listing)", "ref": "https://maptons.com/pe/c/valencia-2043630208/"},
+            {"label": "MiCole school listing", "ref": "https://www.micole.net/valencia/godella/colegio-english-school-los-olivos"},
+        ],
+    },
 
-# ---- UI state ----
-if "selected_school" not in st.session_state:
-    st.session_state.selected_school = df.loc[0, "name"]
-
-# ---- Sidebar filters ----
-st.sidebar.header("Filters")
-types = st.sidebar.multiselect("School type", sorted(df["type"].unique()), default=sorted(df["type"].unique()))
-df_f = df[df["type"].isin(types)].copy()
-
-query = st.sidebar.text_input("Search by name/address", "")
-if query.strip():
-    q = query.strip().lower()
-    df_f = df_f[df_f.apply(lambda r: q in str(r["name"]).lower() or q in str(r["address"]).lower(), axis=1)]
-
-st.title("Valencia early-years schools (screen-light focus)")
-
-left, right = st.columns([0.42, 0.58], gap="large")
-
-# ---- Left column: list + selected school card ----
-with left:
-    st.subheader("Schools")
-    if df_f.empty:
-        st.info("No schools match your filters.")
-    else:
-        # Use a radio so selection is immediate & stable
-        selected = st.radio(
-            label="Select a school",
-            options=df_f["name"].tolist(),
-            index=df_f["name"].tolist().index(st.session_state.selected_school) if st.session_state.selected_school in df_f["name"].tolist() else 0,
-            label_visibility="collapsed",
-        )
-        st.session_state.selected_school = selected
-
-    st.divider()
-    st.subheader("Selected school")
-
-    sel = df[df["name"] == st.session_state.selected_school].iloc[0]
-
-    st.markdown(f"### {sel['name']}")
-    st.write(f"**Type:** {sel['type']}")
-    st.write(f"**Address:** {sel['address']}")
-    st.write(f"**Ages:** {sel.get('ages','—')}")
-    st.write(f"**Curriculum:** {sel.get('curriculum','—')}")
-    st.write(f"**Languages:** {sel.get('languages','—')}")
-    st.write(f"**Device / screen policy (to verify):** {sel.get('screen_policy','—')}")
-    if sel.get("notes"):
-        st.caption(sel["notes"])
-
-    if sel.get("sources"):
-        st.markdown("**Sources**")
-        for url in sel["sources"]:
-            st.markdown(f"- {url}")
-
-# ---- Right column: map ----
-with right:
-    st.subheader("Map")
-
-    # Center map on selected school
-    view_state = pdk.ViewState(
-        latitude=float(sel["lat"]),
-        longitude=float(sel["lon"]),
-        zoom=12,
-        pitch=0,
-    )
-
-    layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=df_f,
-        get_position="[lon, lat]",
-        get_radius=65,
-        pickable=True,
-    )
-
-    tooltip = {
-        "html": "<b>{name}</b><br/>{address}<br/><i>{type}</i>",
-        "style": {"backgroundColor": "white", "color": "black"},
-    }
-
-    deck = pdk.Deck(
-        layers=[layer],
-        initial_view_state=view_state,
-        tooltip=tooltip,
-        map_style=None,  # default
-    )
-
-    event = st.pydeck_chart(deck, use_container_width=True)
-
-    # Optional: click-to-select based on tooltip pick (Streamlit/pydeck limitations vary by version)
-    # For deterministic behavior, selection is driven by the radio list.
-
-st.caption("No runtime geocoding: all coordinates are pre-filled in schools_data.py.")
+    # --- Top-rated public CEIPs (València city) ---
+    {
+        "id": "ceip_benimaclet",
+        "name": "CEIP Municipal Benimaclet",
+        "type": "Public",
+        "address": "Carrer de l'Arquitecte Arnau s/n, 46020 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Infantil (3–6), Primaria (6–12)",
+        "curriculum": "Spanish (Valencian Community)",
+        "languages_day_to_day": "Spanish/Valencian vehicular + English (medium level, per directory)",
+        "device_policy_summary": "Public CEIP: device policies vary by centre; verify whether/when 1:1 starts (many start later in Primaria/ESO).",
+        "pedagogy": "Mainstream public with centre project; verify early-years approach and homework norms.",
+        "lat": 39.4750,
+        "lon": -0.3600,
+        "coords_confidence": "approx",
+        "reviews": {"micole_rating": 4.6, "micole_reviews": 10, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "MiCole listing (address + rating)", "ref": "https://www.micole.net/valencia/valencia/colegio-municipal-benimaclet"},
+        ],
+        "notes": "Coordinates approximate; validate pin using the exact address in Google Maps."
+    },
+    {
+        "id": "ceip_giner_de_los_rios",
+        "name": "CEIP Francisco Giner de los Ríos",
+        "type": "Public",
+        "address": "Carrer de Ruaya, 28, 46009 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Infantil (3–6), Primaria (6–12)",
+        "curriculum": "Spanish (Valencian Community)",
+        "languages_day_to_day": "Spanish/Valencian + English (centre project; verify).",
+        "device_policy_summary": "Verify if/when 1:1 starts; many CEIPs use shared/teacher-led devices in early years.",
+        "pedagogy": "Mainstream public; verify project-based elements and classroom structure.",
+        "lat": 39.486946,
+        "lon": -0.380345,
+        "coords_confidence": "gva_guide",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "GVA directory (Lat/Long + address)", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46016580"},
+        ],
+    },
+    {
+        "id": "ceip_rodriguez_fornos",
+        "name": "CEIP Rodríguez Fornos",
+        "type": "Public",
+        "address": "Carrer del Mestre Asensi, 3, 46020 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Infantil (3–6), Primaria (6–12)",
+        "curriculum": "Spanish (Valencian Community)",
+        "languages_day_to_day": "Spanish/Valencian + English (centre project; verify).",
+        "device_policy_summary": "Verify device policy; likely shared devices first.",
+        "pedagogy": "Mainstream public; verify teaching approach.",
+        "lat": 39.479324,
+        "lon": -0.359375,
+        "coords_confidence": "gva_guide",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "GVA directory (Lat/Long + address)", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46016957"},
+        ],
+    },
+    {
+        "id": "ceip_jaime_balmes",
+        "name": "CEIP Jaime Balmes",
+        "type": "Public",
+        "address": "Carrer de Quart, 55, 46001 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Infantil (3–6), Primaria (6–12)",
+        "curriculum": "Spanish (Valencian Community)",
+        "languages_day_to_day": "Spanish/Valencian + English (centre project; verify).",
+        "device_policy_summary": "Verify device policy.",
+        "pedagogy": "Mainstream public; verify early-years approach.",
+        "lat": 39.469256,
+        "lon": -0.386374,
+        "coords_confidence": "approx",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "GVA directory (centre record)", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46012268"},
+        ],
+        "notes": "Coordinates approximate; confirm exact location."
+    },
+    {
+        "id": "ceip_ivaf_luis_fortich",
+        "name": "CEIP IVAF–Luis Fortich",
+        "type": "Public",
+        "address": "Carrer de la Guàrdia Civil, 23, 46020 València, Valencia, Spain",
+        "municipality": "València",
+        "stages": "Infantil (3–6), Primaria (6–12)",
+        "curriculum": "Spanish (Valencian Community)",
+        "languages_day_to_day": "Spanish/Valencian + English (centre project; verify).",
+        "device_policy_summary": "Verify device policy.",
+        "pedagogy": "Mainstream public; verify approach.",
+        "lat": 39.480020,
+        "lon": -0.360840,
+        "coords_confidence": "gva_guide",
+        "reviews": {"micole_rating": None, "micole_reviews": None, "google_rating": None, "google_reviews": None},
+        "sources": [
+            {"label": "GVA directory (Lat/Long + address)", "ref": "https://aplicaciones.edu.gva.es/ovice/areaogt/val/centro.asp?codi=46011831"},
+        ],
+    },
+]

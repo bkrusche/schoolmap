@@ -144,6 +144,14 @@ if "selected_id" not in st.session_state:
     st.session_state.selected_id = ""
 if "last_clicked" not in st.session_state:
     st.session_state.last_clicked = None
+if "filter_hash" not in st.session_state:
+    st.session_state.filter_hash = None
+
+# Check if filters changed - if so, clear click tracking
+current_filter_hash = hash(tuple(sorted(dff["id"].tolist())))
+if st.session_state.filter_hash != current_filter_hash:
+    st.session_state.filter_hash = current_filter_hash
+    st.session_state.last_clicked = None
 
 if st.session_state.selected_id not in dff["id"].tolist():
     st.session_state.selected_id = dff.iloc[0]["id"]
@@ -230,26 +238,33 @@ left, right = st.columns([2, 1], gap="large")
 
 with left:
     st.subheader("Map (click a pin to select)")
+    
+    # Use a stable key - dynamic keys cause issues
     map_state = st_folium(m, width=950, height=650, key="school_map")
 
-    # Detect clicks - only process NEW clicks
+    # Detect clicks - only process if coordinates actually changed
     if map_state and "last_object_clicked" in map_state:
         clicked = map_state["last_object_clicked"]
-        if clicked and len(df_map) > 0:
-            # Create a unique identifier for this click
-            click_signature = f"{clicked.get('lat')}_{clicked.get('lng')}"
+        if clicked and isinstance(clicked, dict) and len(df_map) > 0:
+            click_lat = clicked.get("lat")
+            click_lon = clicked.get("lng", clicked.get("lon"))
             
-            # Only process if this is a NEW click
-            if st.session_state.last_clicked != click_signature:
-                click_lat = clicked.get("lat")
-                click_lon = clicked.get("lng", clicked.get("lon"))
+            if click_lat is not None and click_lon is not None:
+                # Create a precise signature for this click
+                click_signature = f"{float(click_lat):.7f},{float(click_lon):.7f}"
                 
-                if click_lat and click_lon:
-                    new_id = nearest_school_id(df_map, click_lat, click_lon, max_m=80)
-                    if new_id and new_id != st.session_state.selected_id:
-                        st.session_state.selected_id = new_id
+                # Only process if this is genuinely a NEW click
+                if st.session_state.last_clicked != click_signature:
+                    new_id = nearest_school_id(df_map, float(click_lat), float(click_lon), max_m=80)
+                    
+                    if new_id:
+                        # Update tracking FIRST, before any state changes
                         st.session_state.last_clicked = click_signature
-                        st.rerun()
+                        
+                        # Only rerun if we're actually changing selection
+                        if new_id != st.session_state.selected_id:
+                            st.session_state.selected_id = new_id
+                            st.rerun()
 
     st.subheader("School list (manual select)")
     options = dff["id"].tolist()

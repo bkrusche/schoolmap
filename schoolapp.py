@@ -280,7 +280,11 @@ def make_popup_html(row: pd.Series) -> str:
 st.title("Valencia schools — screen-light shortlist map")
 st.caption("Interactive map: click a pin to see a popup; select a school in the sidebar for the full portrait.")
 
-df = schools_to_df(DEFAULT_SCHOOLS)
+# ---- session-state init ----
+if "df" not in st.session_state:
+    st.session_state.df = schools_to_df(DEFAULT_SCHOOLS)
+
+df = st.session_state.df
 
 with st.sidebar:
     st.header("Filters")
@@ -330,16 +334,27 @@ if device_filter != "All":
 
 # Geocode missing coords if requested
 if do_geocode:
-    missing = f[(f["lat"].isna()) | (f["lon"].isna())]["address"].dropna().unique().tolist()
-    if missing:
-        res = geocode_addresses(missing)
+    missing_mask = df["lat"].isna() | df["lon"].isna()
+    missing_addresses = df.loc[missing_mask, "address"].dropna().unique().tolist()
+
+    if not missing_addresses:
+        st.info("No missing coordinates in the current dataset.")
+    else:
+        res = geocode_addresses(missing_addresses)  # cached
+        updated = 0
         for addr, coords in res.items():
             if coords:
-                df.loc[df["address"] == addr, "lat"] = coords["lat"]
-                df.loc[df["address"] == addr, "lon"] = coords["lon"]
-        st.success("Geocoding done (cached). If some addresses failed, add lat/lon manually in data.")
-    else:
-        st.info("No missing coordinates in the filtered set.")
+                m = df["address"] == addr
+                df.loc[m, "lat"] = coords["lat"]
+                df.loc[m, "lon"] = coords["lon"]
+                updated += int(m.sum())
+
+        # Persist back to session state
+        st.session_state.df = df
+
+        st.success(f"Geocoding done. Updated {updated} rows.")
+        st.rerun()
+
 
 # Build map
 # Default center: Valencia

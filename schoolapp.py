@@ -131,7 +131,13 @@ with col1:
         if screen_policy and len(screen_policy) > 60:
             screen_policy = screen_policy[:60] + "..."
         
+        # Extract Micole rating
+        micole_rating = None
+        if school.get("reviews") and isinstance(school["reviews"], dict):
+            micole_rating = school["reviews"].get("micole_rating")
+        
         table_data.append({
+            "Micole Rating": micole_rating if micole_rating is not None else "—",
             "School": school.get("name", "N/A"),
             "Type": school.get("type", "N/A"),
             "Municipality": school.get("municipality", "N/A"),
@@ -143,12 +149,17 @@ with col1:
     
     df = pd.DataFrame(table_data)
     
+    # Sort by Micole Rating (descending), with "—" (no rating) at the bottom
+    df['_sort_key'] = df['Micole Rating'].apply(lambda x: -999 if x == "—" else float(x))
+    df = df.sort_values('_sort_key', ascending=False).drop('_sort_key', axis=1).reset_index(drop=True)
+    
     # Display as interactive dataframe
     st.dataframe(
         df,
         use_container_width=True,
         hide_index=True,
         column_config={
+            "Micole Rating": st.column_config.TextColumn("⭐ Micole", width="small"),
             "School": st.column_config.TextColumn("School Name", width="large"),
             "Type": st.column_config.TextColumn("Type", width="small"),
             "Municipality": st.column_config.TextColumn("Location", width="small"),
